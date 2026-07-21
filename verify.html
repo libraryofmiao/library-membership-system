@@ -215,9 +215,7 @@ document.getElementById(
 "loading"
 ).style.display="none";
 
-if(
-result.valid !== true
-){
+if(result.valid !== true){
 
 document.getElementById(
 "notFound"
@@ -271,14 +269,24 @@ document.getElementById(
 ).innerText =
 result.membershipType || "";
 
+// Works with BOTH:
+// status: "Active"
+// memberStatus: "Active"
+
+const memberStatus =
+result.memberStatus ||
+result.status ||
+"";
+
 document.getElementById(
 "memberStatus"
 ).innerText =
-result.memberStatus || "";
+memberStatus;
 
 if(
-result.memberStatus &&
-result.memberStatus.toLowerCase()
+String(memberStatus)
+.trim()
+.toLowerCase()
 ==="active"
 ){
 
