@@ -201,22 +201,22 @@ try{
 
 const response =
 await fetch(
-
 SCRIPT_URL +
 "?action=verifyMember&memberId=" +
 encodeURIComponent(memberId)
-
 );
 
 const result =
 await response.json();
+
+console.log(result);
 
 document.getElementById(
 "loading"
 ).style.display="none";
 
 if(
-result.status !== "success"
+result.valid !== true
 ){
 
 document.getElementById(
@@ -274,11 +274,11 @@ result.membershipType || "";
 document.getElementById(
 "memberStatus"
 ).innerText =
-result.status || "";
+result.memberStatus || "";
 
 if(
-result.status &&
-result.status.toLowerCase()
+result.memberStatus &&
+result.memberStatus.toLowerCase()
 ==="active"
 ){
 
