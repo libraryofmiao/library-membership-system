@@ -9,7 +9,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-body{background:#f5f5f5}.card-wrapper{max-width:900px;margin:auto}.member-card{width:850px;height:520px;background:#fff;border:3px solid #0d6efd;border-radius:15px;overflow:hidden;position:relative}.header{background:#0d6efd;color:#fff;text-align:center;padding:15px}.body-section{padding:20px}.photo{width:160px;height:190px;object-fit:cover;border:2px solid #ccc}.member-info{font-size:18px;line-height:2}.footer{position:absolute;bottom:0;width:100%;text-align:center;background:#f1f1f1;padding:10px}.qr{text-align:center}@media(max-width:900px){.member-card{width:100%;height:auto}}#libraryLogo{display:block;margin:auto;height:80px;width:auto;margin-bottom:10px;background:white;border-radius:50%;padding:5px}
+body{background:#f5f5f5}.card-wrapper{max-width:920px;margin:auto}.member-card{width:850px;min-height:520px;background:#fff;border:3px solid #0d6efd;border-radius:15px;overflow:hidden;position:relative;margin:auto}.header{background:#0d6efd;color:#fff;text-align:center;padding:15px}.body-section{padding:20px 24px 85px}.photo{width:160px;height:190px;object-fit:cover;border:2px solid #ccc;border-radius:6px;background:#f8f9fa}.member-info{font-size:18px;line-height:2}.qr{text-align:center}.qr-box{display:flex;justify-content:center;align-items:center;min-height:130px}.footer{position:absolute;bottom:0;width:100%;text-align:center;background:#f1f1f1;padding:10px}.signatory{position:absolute;right:30px;bottom:70px;text-align:center;font-size:14px}.loading{opacity:.7}@media(max-width:900px){.member-card{width:100%;height:auto;min-height:0}.member-info{font-size:16px}.body-section{padding-bottom:100px}.signatory{position:static;text-align:right;margin:10px 25px 15px}.footer{position:static}}
+#libraryLogo{display:block;margin:auto;height:80px;width:auto;margin-bottom:10px;background:white;border-radius:50%;padding:5px}
 </style>
 </head>
 <body>
@@ -17,21 +18,21 @@ body{background:#f5f5f5}.card-wrapper{max-width:900px;margin:auto}.member-card{w
 <h2 class="text-center mb-3">Digital Membership Card</h2>
 <div id="membershipCard" class="member-card">
 <div class="header">
-<img id="libraryLogo" src="https://drive.google.com/thumbnail?id=1mLDm4Y1bu7UG-WP7h-RzRoDrpQTwY2pe" alt="Library Logo">
+<img id="libraryLogo" src="https://drive.google.com/thumbnail?id=1mLDm4Y1bu7UG-WP7h-RzRoDrpQTwY2pe&sz=w300" alt="Library Logo">
 <h3>Sub Divisional Library Miao</h3><p class="mb-0">Library Membership Card</p>
 </div>
-<div class="body-section"><div class="row">
-<div class="col-md-3 text-center"><img id="memberPhoto" class="photo" src="https://via.placeholder.com/160x190" alt="Member Photo"></div>
+<div class="body-section"><div class="row align-items-start g-3">
+<div class="col-md-3 text-center"><img id="memberPhoto" class="photo" src="https://via.placeholder.com/160x190?text=Photo" alt="Member Photo"></div>
 <div class="col-md-6"><div class="member-info">
-<strong>Name:</strong> <span id="memberName">Loading...</span><br>
+<strong>Name:</strong> <span id="memberName" class="loading">Loading...</span><br>
 <strong>Member ID:</strong> <span id="memberId">Loading...</span><br>
-<strong>Membership:</strong> <span id="memberType">General</span><br>
+<strong>Membership:</strong> <span id="memberType">-</span><br>
 <strong>Issue Date:</strong> <span id="issueDate">-</span><br>
-<strong>Status:</strong> <span id="membershipStatus">Permanent Member</span>
+<strong>Status:</strong> <span id="membershipStatus">-</span>
 </div></div>
-<div class="col-md-3 qr"><div id="qrcode"></div><p class="mt-2">Scan Verification</p></div>
+<div class="col-md-3 qr"><div class="qr-box"><div id="qrcode"></div></div><p class="mt-2 mb-0">Scan Verification</p></div>
 </div></div>
-<div style="position:absolute;right:30px;bottom:70px;text-align:center;font-size:14px;">____________________<br>Authorized Signatory</div>
+<div class="signatory">____________________<br>Authorized Signatory</div>
 <div class="footer">Sub Divisional Library Miao</div>
 </div>
 <div class="text-center mt-4">
@@ -46,34 +47,26 @@ let currentVerifyCode="";
 const params=new URLSearchParams(window.location.search);
 const memberId=params.get("id");
 
-if(!memberId){
- alert("Member ID missing in URL");
-}else{
- loadMember(memberId);
-}
+if(!memberId){ alert("Member ID missing in URL"); } else { loadMember(memberId); }
 
-async function loadMember(memberId){
+async function loadMember(id){
  try{
-  const url=SCRIPT_URL+"?action=getMember&memberId="+encodeURIComponent(memberId)+"&_="+Date.now();
-  const response=await fetch(url,{method:"GET",redirect:"follow",cache:"no-store"});
+  const url=SCRIPT_URL+"?action=getMember&memberId="+encodeURIComponent(id)+"&_="+Date.now();
+  const response=await fetch(url,{method:"GET",cache:"no-store",redirect:"follow"});
   const text=await response.text();
   let result;
-  try{result=JSON.parse(text);}catch(parseError){
-   console.error("Apps Script returned non-JSON:",text);
-   throw new Error("Apps Script did not return JSON. Response: "+text.substring(0,200));
-  }
-  if(result.status!=="success" || !result.member){
-   throw new Error(result.message||"Member not found.");
-  }
+  try{result=JSON.parse(text);}catch(e){throw new Error("The membership server returned an invalid response.");}
+  if(result.status!=="success"||!result.member) throw new Error(result.message||"Member not found.");
   fillCard(result.member);
  }catch(err){
-  console.error("Unable to load member:",err);
+  console.error(err);
+  document.getElementById("memberName").innerText="Unable to load";
   alert("Unable to load member data.\n\n"+(err.message||err));
  }
 }
 
 function driveImageUrl(url){
- if(!url)return "https://via.placeholder.com/160x190";
+ if(!url)return "https://via.placeholder.com/160x190?text=Photo";
  const value=String(url).trim();
  let match=value.match(/[?&]id=([A-Za-z0-9_-]+)/);
  if(match)return "https://drive.google.com/thumbnail?id="+match[1]+"&sz=w600";
@@ -87,46 +80,38 @@ function fillCard(member){
  document.getElementById("memberId").innerText=member.memberId||"";
  document.getElementById("memberType").innerText=member.membershipType||"";
  document.getElementById("issueDate").innerText=member.issueDate||member.timestamp||"";
- document.getElementById("membershipStatus").innerText=member.status||"Active";
- const photoElement=document.getElementById("memberPhoto");
- photoElement.src=driveImageUrl(member.photoUrl);
- photoElement.onerror=function(){this.src="https://via.placeholder.com/160x190";};
- if(!member.verify){
-  console.error("Verify code missing:",member);
-  alert("Verification code is missing for this member.\nPlease check column U (Verify) in the Members sheet.");
-  return;
- }
- currentVerifyCode=String(member.verify).trim();
+ document.getElementById("membershipStatus").innerText=member.status||member.memberStatus||"Active";
+ document.getElementById("memberPhoto").src=driveImageUrl(member.photoUrl);
+ document.getElementById("memberPhoto").onerror=function(){this.src="https://via.placeholder.com/160x190?text=Photo";};
+ currentVerifyCode=String(member.verify||member.qrData||"").trim();
+ if(!currentVerifyCode){alert("Verification code is missing for this member. Please check column U (Verify).");return;}
  generateQR(currentVerifyCode);
 }
 
-function generateQR(verifyCode){
- const qrContainer=document.getElementById("qrcode");
- qrContainer.innerHTML="";
- if(!verifyCode)return;
+function generateQR(code){
+ const box=document.getElementById("qrcode");
+ box.innerHTML="";
  const verificationURL=new URL("verify.html",window.location.href);
- verificationURL.searchParams.set("verify",verifyCode);
- new QRCode(qrContainer,{text:verificationURL.href,width:120,height:120});
+ verificationURL.searchParams.set("verify",code);
+ new QRCode(box,{text:verificationURL.href,width:120,height:120,correctLevel:QRCode.CorrectLevel.M});
 }
 
 function openVerification(){
  if(!currentVerifyCode){alert("Verification code is missing.");return;}
- const verificationURL=new URL("verify.html",window.location.href);
- verificationURL.searchParams.set("verify",currentVerifyCode);
- window.open(verificationURL.href,"_blank");
+ const url=new URL("verify.html",window.location.href);
+ url.searchParams.set("verify",currentVerifyCode);
+ window.open(url.href,"_blank");
 }
 
 async function downloadCard(){
  try{
-  const card=document.getElementById("membershipCard");
-  const canvas=await html2canvas(card,{scale:3,useCORS:true,allowTaint:false});
+  const canvas=await html2canvas(document.getElementById("membershipCard"),{scale:3,useCORS:true,allowTaint:false,backgroundColor:"#ffffff"});
   const imgData=canvas.toDataURL("image/png");
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF("landscape","mm","a4");
   pdf.addImage(imgData,"PNG",10,10,277,170);
-  const id=document.getElementById("memberId").innerText;
-  pdf.save((id||"membership-card")+".pdf");
- }catch(err){console.error("PDF generation error:",err);alert("Unable to generate PDF.");}
+  pdf.save((document.getElementById("memberId").innerText||"membership-card")+".pdf");
+ }catch(err){console.error(err);alert("Unable to generate PDF.");}
 }
 </script>
 </body>
