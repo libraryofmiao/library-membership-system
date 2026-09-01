@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 
@@ -8,7 +9,9 @@
 
 <title>Member Verification</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+rel="stylesheet">
 
 <style>
 
@@ -54,6 +57,7 @@ margin-bottom:15px;
 
 </head>
 
+
 <body>
 
 <div class="container py-5">
@@ -75,6 +79,11 @@ Member Verification
 
 </div>
 
+
+<!-- ========================================= -->
+<!-- LOADING -->
+<!-- ========================================= -->
+
 <div id="loading" class="text-center">
 
 <div class="spinner-border text-primary"></div>
@@ -85,6 +94,11 @@ Verifying Member...
 
 </div>
 
+
+<!-- ========================================= -->
+<!-- VERIFIED MEMBER -->
+<!-- ========================================= -->
+
 <div id="resultArea" style="display:none;">
 
 <div class="row">
@@ -94,9 +108,11 @@ Verifying Member...
 <img
 id="memberPhoto"
 class="member-photo"
-src="https://via.placeholder.com/180x220">
+src="https://via.placeholder.com/180x220"
+alt="Member Photo">
 
 </div>
+
 
 <div class="col-md-8">
 
@@ -104,20 +120,24 @@ src="https://via.placeholder.com/180x220">
 
 <hr>
 
+
 <p>
 <strong>Name:</strong>
 <span id="memberName"></span>
 </p>
+
 
 <p>
 <strong>Member ID:</strong>
 <span id="memberId"></span>
 </p>
 
+
 <p>
 <strong>Membership Type:</strong>
 <span id="memberType"></span>
 </p>
+
 
 <p>
 <strong>Status:</strong>
@@ -129,6 +149,11 @@ src="https://via.placeholder.com/180x220">
 </div>
 
 </div>
+
+
+<!-- ========================================= -->
+<!-- MEMBER NOT FOUND -->
+<!-- ========================================= -->
 
 <div id="notFound" style="display:none;">
 
@@ -146,76 +171,132 @@ The QR Code is invalid or the member does not exist.
 
 </div>
 
+
 </div>
 
 </div>
+
 
 <script>
 
-// =====================================
+// ======================================================
 // APPS SCRIPT URL
-// =====================================
+// ======================================================
 
 const SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbwu7yamVKdb7h9VWGGQ_eUHGpUJesvP4tinAEHAKLhc31tyeEEeOyPdboF0AUwZJLjS/exec";
 
-// =====================================
-// GET MEMBER ID
-// =====================================
+
+// ======================================================
+// GET VERIFY CODE FROM QR URL
+// ======================================================
+//
+// NEW SYSTEM:
+//
+// verify.htm?verify=aB7xQ2
+//
+// NOT:
+//
+// verify.htm?id=SDLM-2026-0001
+//
+// ======================================================
 
 const params =
 new URLSearchParams(
 window.location.search
 );
 
-const memberId =
-params.get("id");
 
-// =====================================
-// START VERIFY
-// =====================================
+const verifyCode =
+params.get("verify");
 
-if(!memberId){
+
+// ======================================================
+// START VERIFICATION
+// ======================================================
+
+if(!verifyCode){
 
 document.getElementById(
 "loading"
 ).style.display="none";
+
 
 document.getElementById(
 "notFound"
 ).style.display="block";
 
-}else{
+}
+else{
 
-verifyMember(memberId);
+verifyMember(
+verifyCode
+);
 
 }
 
-// =====================================
-// VERIFY MEMBER
-// =====================================
 
-async function verifyMember(memberId){
+// ======================================================
+// VERIFY MEMBER
+// ======================================================
+//
+// The Verify code is sent to Apps Script.
+//
+// Apps Script searches ONLY column U.
+//
+// ======================================================
+
+async function verifyMember(
+verifyCode
+){
 
 try{
 
 const response =
 await fetch(
+
 SCRIPT_URL +
-"?action=verifyMember&memberId=" +
-encodeURIComponent(memberId)
+
+"?action=verifyMember&verify=" +
+
+encodeURIComponent(
+verifyCode
+)
+
 );
+
+
+if(!response.ok){
+
+throw new Error(
+"Network response was not OK."
+);
+
+}
+
 
 const result =
 await response.json();
 
-console.log(result);
+
+console.log(
+"Verification result:",
+result
+);
+
+
+// Hide loading
 
 document.getElementById(
 "loading"
 ).style.display="none";
 
-if(result.valid !== true){
+
+// Check result
+
+if(
+result.valid !== true
+){
 
 document.getElementById(
 "notFound"
@@ -225,16 +306,27 @@ return;
 
 }
 
-loadMemberData(result);
+
+// Load verified member
+
+loadMemberData(
+result
+);
 
 }
+
 catch(err){
 
-console.error(err);
+console.error(
+"Verification error:",
+err
+);
+
 
 document.getElementById(
 "loading"
 ).style.display="none";
+
 
 document.getElementById(
 "notFound"
@@ -244,50 +336,84 @@ document.getElementById(
 
 }
 
-// =====================================
-// LOAD MEMBER DATA
-// =====================================
 
-function loadMemberData(result){
+// ======================================================
+// LOAD MEMBER DATA
+// ======================================================
+
+function loadMemberData(
+result
+){
 
 document.getElementById(
 "resultArea"
 ).style.display="block";
+
+
+// ------------------------------------------------------
+// NAME
+// ------------------------------------------------------
 
 document.getElementById(
 "memberName"
 ).innerText =
 result.fullName || "";
 
+
+// ------------------------------------------------------
+// MEMBER ID
+// ------------------------------------------------------
+//
+// This is DISPLAYED after successful verification.
+//
+// It is NOT used to perform the lookup.
+//
+// ------------------------------------------------------
+
 document.getElementById(
 "memberId"
 ).innerText =
 result.memberId || "";
+
+
+// ------------------------------------------------------
+// MEMBERSHIP TYPE
+// ------------------------------------------------------
 
 document.getElementById(
 "memberType"
 ).innerText =
 result.membershipType || "";
 
-// Works with BOTH:
-// status: "Active"
-// memberStatus: "Active"
+
+// ------------------------------------------------------
+// STATUS
+// ------------------------------------------------------
 
 const memberStatus =
 result.memberStatus ||
 result.status ||
 "";
 
+
 document.getElementById(
 "memberStatus"
 ).innerText =
 memberStatus;
 
+
+// ------------------------------------------------------
+// VERIFIED / INACTIVE MESSAGE
+// ------------------------------------------------------
+
 if(
+
 String(memberStatus)
 .trim()
 .toLowerCase()
-==="active"
+===
+"active"
+
 ){
 
 document.getElementById(
@@ -296,6 +422,7 @@ document.getElementById(
 '<span class="status-active">✓ VERIFIED MEMBER</span>';
 
 }
+
 else{
 
 document.getElementById(
@@ -305,7 +432,14 @@ document.getElementById(
 
 }
 
-if(result.photoUrl){
+
+// ------------------------------------------------------
+// MEMBER PHOTO
+// ------------------------------------------------------
+
+if(
+result.photoUrl
+){
 
 document.getElementById(
 "memberPhoto"
@@ -319,4 +453,6 @@ result.photoUrl;
 </script>
 
 </body>
+
 </html>
+```
