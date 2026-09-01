@@ -33,7 +33,7 @@ body{background:#f4f6f9;min-height:100vh}.verify-card{max-width:700px;margin:aut
 </div>
 </div></div>
 <script>
-const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwu7yamVKdb7h9VWGGQ_eUHGpUJesvP4tinAEHAKLhc31tyeEEeOyPdboF0AUwZJLjS/exec";
+const API_BASE=window.MEMBERSHIP_API_BASE||"https://library-membership-system.libraryofmiao.workers.dev/api";
 const verifyCode=(new URLSearchParams(window.location.search).get("verify")||"").trim();
 if(!verifyCode){showError("No verification code was supplied. Please scan a valid membership QR code.");}else{verifyMember(verifyCode);}
 
@@ -49,13 +49,11 @@ function driveImageUrl(url){
 
 async function verifyMember(code){
  try{
-  const url=SCRIPT_URL+"?action=verifyMember&verify="+encodeURIComponent(code)+"&_="+Date.now();
-  const response=await fetch(url,{method:"GET",cache:"no-store",redirect:"follow"});
-  const text=await response.text();
-  let result;
-  try{result=JSON.parse(text);}catch(e){throw new Error("The membership server returned an invalid response.");}
+  const response=await fetch(API_BASE+"/verify?verify="+encodeURIComponent(code)+"&_="+Date.now(),{method:"GET",cache:"no-store"});
+  const result=await response.json().catch(()=>null);
+  if(!response.ok||!result){throw new Error("The membership server returned an invalid response.");}
   document.getElementById("loading").style.display="none";
-  if(result.status!=="success"||!result.member){showError(result.message||"Member not found. The QR code may be invalid.");return;}
+  if(result.success!==true||!result.member){showError(result.message||"Member not found. The QR code may be invalid.");return;}
   loadMemberData(result.member);
  }catch(err){console.error("Verification error:",err);showError(err.message||"Unable to contact the membership server.");}
 }
