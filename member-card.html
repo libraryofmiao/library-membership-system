@@ -1,5 +1,7 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="UTF-8">
@@ -7,55 +9,26 @@
 
 <title>Library Membership Card</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+rel="stylesheet"
+>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
-
-function openVerification(){
-
-const memberId =
-document.getElementById("memberId").innerText;
-
-window.open(
-"verify.html?id=" + encodeURIComponent(memberId),
-"_blank"
-);
-
-}
-
+<!-- QR CODE LIBRARY -->
+<script
+src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-
-function openVerification(){
-
-const memberId =
-document.getElementById("memberId").innerText;
-
-window.open(
-"verify.html?id=" + encodeURIComponent(memberId),
-"_blank"
-);
-
-}
-
+<!-- HTML2CANVAS LIBRARY -->
+<script
+src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-
-function openVerification(){
-
-const memberId =
-document.getElementById("memberId").innerText;
-
-window.open(
-"verify.html?id=" + encodeURIComponent(memberId),
-"_blank"
-);
-
-}
-
+<!-- JSPDF LIBRARY -->
+<script
+src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
 </script>
+
 
 <style>
 
@@ -146,117 +119,199 @@ body{
 
 }
 
-
 #libraryLogo{
+
 display:block;
+
 margin:auto;
+
 height:80px;
+
 width:auto;
+
 margin-bottom:10px;
+
 background:white;
+
 border-radius:50%;
+
 padding:5px;
+
 }
+
 </style>
 
 </head>
 
+
 <body>
+
 
 <div class="container py-4">
 
 <div class="card-wrapper">
 
+
 <h2 class="text-center mb-3">
 Digital Membership Card
 </h2>
 
-<div id="membershipCard" class="member-card">
+
+<!-- ================================================= -->
+<!-- MEMBERSHIP CARD -->
+<!-- ================================================= -->
+
+<div
+id="membershipCard"
+class="member-card"
+>
+
+
+<!-- ================================================= -->
+<!-- HEADER -->
+<!-- ================================================= -->
 
 <div class="header">
+
 
 <img
 id="libraryLogo"
 src="https://drive.google.com/thumbnail?id=1mLDm4Y1bu7UG-WP7h-RzRoDrpQTwY2pe"
-alt="Library Logo">
+alt="Library Logo"
+>
+
 
 <h3>
 Sub Divisional Library Miao
 </h3>
 
+
 <p class="mb-0">
 Library Membership Card
 </p>
 
+
 </div>
+
+
+<!-- ================================================= -->
+<!-- BODY -->
+<!-- ================================================= -->
 
 <div class="body-section">
 
+
 <div class="row">
 
+
+<!-- ================================================= -->
+<!-- PHOTO -->
+<!-- ================================================= -->
+
 <div class="col-md-3 text-center">
+
 
 <img
 id="memberPhoto"
 class="photo"
-src="https://via.placeholder.com/160x190">
+src="https://via.placeholder.com/160x190"
+alt="Member Photo"
+>
+
 
 </div>
 
+
+<!-- ================================================= -->
+<!-- MEMBER INFORMATION -->
+<!-- ================================================= -->
+
 <div class="col-md-6">
+
 
 <div class="member-info">
 
+
 <strong>Name:</strong>
+
 <span id="memberName">
 Loading...
 </span>
 
+
 <br>
 
+
 <strong>Member ID:</strong>
+
 <span id="memberId">
 Loading...
 </span>
 
+
 <br>
 
+
 <strong>Membership:</strong>
+
 <span id="memberType">
 General
 </span>
 
+
 <br>
 
+
 <strong>Issue Date:</strong>
+
 <span id="issueDate">
 -
 </span>
 
+
 <br>
 
+
 <strong>Status:</strong>
+
 <span id="membershipStatus">
 Permanent Member
 </span>
 
-</div>
 
 </div>
+
+
+</div>
+
+
+<!-- ================================================= -->
+<!-- QR CODE -->
+<!-- ================================================= -->
 
 <div class="col-md-3 qr">
 
+
 <div id="qrcode"></div>
+
 
 <p class="mt-2">
 Scan Verification
 </p>
 
-</div>
 
 </div>
 
+
 </div>
+
+
+</div>
+
+
+<!-- ================================================= -->
+<!-- AUTHORIZED SIGNATORY -->
+<!-- ================================================= -->
 
 <div
 style="
@@ -265,7 +320,8 @@ right:30px;
 bottom:70px;
 text-align:center;
 font-size:14px;
-">
+"
+>
 
 ____________________
 
@@ -275,45 +331,68 @@ Authorized Signatory
 
 </div>
 
+
+<!-- ================================================= -->
+<!-- FOOTER -->
+<!-- ================================================= -->
+
 <div class="footer">
 
 Sub Divisional Library Miao
 
 </div>
 
+
 </div>
+
+
+<!-- ================================================= -->
+<!-- BUTTONS -->
+<!-- ================================================= -->
 
 <div class="text-center mt-4">
 
+
 <button
 class="btn btn-primary"
-onclick="downloadCard()">
+onclick="downloadCard()"
+>
 
 Download PDF Card
 
 </button>
 
+
 <button
 class="btn btn-success ms-2"
-onclick="window.print()">
+onclick="window.print()"
+>
 
 Print Card
 
 </button>
 
+
 <button
 class="btn btn-info ms-2"
-onclick="openVerification()">
+onclick="openVerification()"
+>
+
 Verify Member
+
 </button>
 
+
 </div>
+
 
 </div>
 
 </div>
+
 
 <script>
+
 
 // =====================================================
 // APPS SCRIPT WEB APP URL
@@ -324,7 +403,32 @@ const SCRIPT_URL =
 
 
 // =====================================================
+// CURRENT VERIFY CODE
+// =====================================================
+//
+// This is populated when the member record is loaded.
+//
+// The QR code and Verify Member button both use this
+// value.
+//
+// =====================================================
+
+let currentVerifyCode = "";
+
+
+// =====================================================
 // GET MEMBER ID FROM URL
+// =====================================================
+//
+// The card page itself still uses Member ID to know
+// which member's card should be displayed.
+//
+// Example:
+//
+// membership-card.html?id=SDLM-2026-0001
+//
+// This does NOT affect public QR verification.
+//
 // =====================================================
 
 const params =
@@ -332,8 +436,14 @@ new URLSearchParams(
 window.location.search
 );
 
+
 const memberId =
 params.get("id");
+
+
+// =====================================================
+// START MEMBER LOADING
+// =====================================================
 
 if(!memberId){
 
@@ -344,7 +454,9 @@ alert(
 }
 else{
 
-loadMember(memberId);
+loadMember(
+memberId
+);
 
 }
 
@@ -353,36 +465,74 @@ loadMember(memberId);
 // LOAD MEMBER
 // =====================================================
 
-async function loadMember(memberId){
+async function loadMember(
+memberId
+){
 
 try{
+
 
 const response =
 await fetch(
 
 SCRIPT_URL +
+
 "?action=getMember&memberId=" +
-encodeURIComponent(memberId)
+
+encodeURIComponent(
+memberId
+)
 
 );
+
+
+if(!response.ok){
+
+throw new Error(
+"Network response was not OK."
+);
+
+}
+
 
 const result =
 await response.json();
 
-if(result.status !== "success"){
 
-alert(result.message);
+console.log(
+"Member data:",
+result
+);
+
+
+if(
+result.status !== "success"
+){
+
+alert(
+result.message ||
+"Member not found."
+);
 
 return;
 
 }
 
-fillCard(result.member);
+
+fillCard(
+result.member
+);
+
 
 }
+
 catch(err){
 
-console.error(err);
+console.error(
+"Unable to load member:",
+err
+);
+
 
 alert(
 "Unable to load member data."
@@ -397,37 +547,73 @@ alert(
 // FILL CARD
 // =====================================================
 
-function fillCard(member){
+function fillCard(
+member
+){
+
+
+// =====================================================
+// MEMBER NAME
+// =====================================================
 
 document
-.getElementById("memberName")
+.getElementById(
+"memberName"
+)
 .innerText =
-member.fullName;
+member.fullName || "";
+
+
+// =====================================================
+// MEMBER ID
+// =====================================================
 
 document
-.getElementById("memberId")
+.getElementById(
+"memberId"
+)
 .innerText =
-member.memberId;
+member.memberId || "";
+
+
+// =====================================================
+// MEMBERSHIP TYPE
+// =====================================================
 
 document
-.getElementById("memberType")
+.getElementById(
+"memberType"
+)
 .innerText =
-member.membershipType;
+member.membershipType || "";
+
+
+// =====================================================
+// ISSUE DATE
+// =====================================================
 
 document
-.getElementById("issueDate")
+.getElementById(
+"issueDate"
+)
 .innerText =
-member.issueDate;
+member.issueDate || "";
 
+
+// =====================================================
+// MEMBER PHOTO
+// =====================================================
 
 const photoElement =
 document.getElementById(
 "memberPhoto"
 );
 
+
 photoElement.src =
 member.photoUrl ||
 "https://via.placeholder.com/160x190";
+
 
 photoElement.onerror =
 function(){
@@ -439,20 +625,18 @@ this.src =
 
 
 // =====================================================
-// GENERATE QR USING VERIFY CODE
+// VERIFY CODE
 // =====================================================
 //
 // IMPORTANT:
-// QR NO LONGER USES MEMBER ID.
 //
-// It uses:
-// member.verify
+// The Verify code is the random 6-character code
+// generated by Apps Script.
 //
 // Example:
+//
 // aB7xQ2
 //
-// The QR opens:
-// verify.htm?verify=aB7xQ2
 // =====================================================
 
 if(!member.verify){
@@ -461,43 +645,81 @@ console.error(
 "Verify code missing for this member."
 );
 
+
 alert(
 "Verification code is missing for this member."
+);
+
+
+return;
+
+}
+
+
+// Store the Verify code for later use.
+
+currentVerifyCode =
+String(
+member.verify
+).trim();
+
+
+// =====================================================
+// GENERATE QR
+// =====================================================
+
+generateQR(
+currentVerifyCode
+);
+
+}
+
+
+// =====================================================
+// GENERATE QR CODE
+// =====================================================
+//
+// QR does NOT contain Member ID.
+//
+// QR contains the verification URL:
+//
+// verify.htm?verify=aB7xQ2
+//
+// =====================================================
+
+function generateQR(
+verifyCode
+){
+
+const qrContainer =
+document.getElementById(
+"qrcode"
+);
+
+
+// Clear previous QR.
+
+qrContainer.innerHTML = "";
+
+
+// -----------------------------------------------------
+// Validate Verify code
+// -----------------------------------------------------
+
+if(!verifyCode){
+
+console.error(
+"Cannot generate QR: Verify code is empty."
 );
 
 return;
 
 }
 
-generateQR(
-member.verify
-);
 
-}
-
-// =====================================================
-// QR CODE
-// =====================================================
-
-function generateQR(verifyCode){
-
-document
-.getElementById("qrcode")
-.innerHTML = "";
-
-
-// =====================================================
-// BUILD VERIFICATION URL
-// =====================================================
-//
-// QR will contain:
-//
-// verify.htm?verify=aB7xQ2
-//
-// instead of:
-//
-// memberId
-// =====================================================
+// -----------------------------------------------------
+// Build verification URL
+// -----------------------------------------------------
 
 const verificationURL =
 new URL(
@@ -505,21 +727,22 @@ new URL(
 window.location.href
 );
 
+
+// Add Verify code.
+
 verificationURL.searchParams.set(
 "verify",
 verifyCode
 );
 
 
-// =====================================================
-// GENERATE QR
-// =====================================================
+// -----------------------------------------------------
+// Generate QR
+// -----------------------------------------------------
 
 new QRCode(
 
-document.getElementById(
-"qrcode"
-),
+qrContainer,
 
 {
 
@@ -534,142 +757,29 @@ height:120
 
 );
 
+
+console.log(
+"QR verification URL:",
+verificationURL.href
+);
+
 }
+
 
 // =====================================================
-// PDF DOWNLOAD
+// OPEN VERIFICATION
 // =====================================================
-
-async function downloadCard(){
-
-const card =
-document.getElementById(
-"membershipCard"
-);
-
-const canvas =
-await html2canvas(
-card,
-{
-scale:3,
-useCORS:true
-}
-);
-
-const imgData =
-canvas.toDataURL(
-"image/png"
-);
-
-const {
-jsPDF
-} = window.jspdf;
-
-const pdf =
-new jsPDF(
-"landscape",
-"mm",
-"a4"
-);
-
-pdf.addImage(
-
-imgData,
-
-"PNG",
-
-10,
-10,
-
-277,
-170
-
-);
-
-const memberId =
-document
-.getElementById(
-"memberId"
-)
-.innerText;
-
-pdf.save(
-memberId + ".pdf"
-);
-
-}
-
-
+//
+// The Verify Member button uses the SAME Verify code
+// already loaded for the card.
+//
+// It does NOT need another Apps Script request.
+//
+// =====================================================
 
 function openVerification(){
 
-const memberId =
-document
-.getElementById("memberId")
-.innerText;
-
-
-// The card itself still uses Member ID internally
-// to load the member record.
-//
-// We need the Verify code for public verification,
-// so obtain it from the member record again.
-
-if(!memberId){
-
-alert(
-"Member ID is missing."
-);
-
-return;
-
-}
-
-
-loadMemberForVerification(
-memberId
-);
-
-}
-
-
-async function loadMemberForVerification(
-memberId
-){
-
-try{
-
-const response =
-await fetch(
-
-SCRIPT_URL +
-"?action=getMember&memberId=" +
-encodeURIComponent(memberId)
-
-);
-
-const result =
-await response.json();
-
-
-if(
-result.status !== "success"
-){
-
-alert(
-"Unable to find member verification code."
-);
-
-return;
-
-}
-
-
-const verifyCode =
-result.member.verify;
-
-
-if(!verifyCode){
+if(!currentVerifyCode){
 
 alert(
 "Verification code is missing."
@@ -680,9 +790,9 @@ return;
 }
 
 
-// =====================================================
-// OPEN NEW VERIFICATION URL
-// =====================================================
+// -----------------------------------------------------
+// Build verification URL
+// -----------------------------------------------------
 
 const verificationURL =
 new URL(
@@ -690,11 +800,16 @@ new URL(
 window.location.href
 );
 
+
 verificationURL.searchParams.set(
 "verify",
-verifyCode
+currentVerifyCode
 );
 
+
+// -----------------------------------------------------
+// Open verification page
+// -----------------------------------------------------
 
 window.open(
 verificationURL.href,
@@ -703,18 +818,141 @@ verificationURL.href,
 
 }
 
+
+// =====================================================
+// PDF DOWNLOAD
+// =====================================================
+
+async function downloadCard(){
+
+try{
+
+
+const card =
+document.getElementById(
+"membershipCard"
+);
+
+
+// -----------------------------------------------------
+// Render card to canvas
+// -----------------------------------------------------
+
+const canvas =
+await html2canvas(
+
+card,
+
+{
+
+scale:3,
+
+useCORS:true
+
+}
+
+);
+
+
+// -----------------------------------------------------
+// Convert to image
+// -----------------------------------------------------
+
+const imgData =
+canvas.toDataURL(
+"image/png"
+);
+
+
+// -----------------------------------------------------
+// Create PDF
+// -----------------------------------------------------
+
+const {
+jsPDF
+} = window.jspdf;
+
+
+const pdf =
+new jsPDF(
+
+"landscape",
+
+"mm",
+
+"a4"
+
+);
+
+
+// -----------------------------------------------------
+// Add card image
+// -----------------------------------------------------
+
+pdf.addImage(
+
+imgData,
+
+"PNG",
+
+10,
+
+10,
+
+277,
+
+170
+
+);
+
+
+// -----------------------------------------------------
+// PDF filename
+// -----------------------------------------------------
+
+const memberId =
+document
+.getElementById(
+"memberId"
+)
+.innerText;
+
+
+// -----------------------------------------------------
+// Save PDF
+// -----------------------------------------------------
+
+pdf.save(
+
+memberId +
+".pdf"
+
+);
+
+
+}
+
 catch(err){
 
-console.error(err);
+console.error(
+"PDF generation error:",
+err
+);
+
 
 alert(
-"Unable to open member verification."
+"Unable to generate PDF."
 );
 
 }
 
 }
+
+
 </script>
 
+
 </body>
+
 </html>
+```
