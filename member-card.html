@@ -419,6 +419,7 @@ document
 .innerText =
 member.issueDate;
 
+
 const photoElement =
 document.getElementById(
 "memberPhoto"
@@ -436,22 +437,83 @@ this.src =
 
 };
 
-generateQR(
-window.location.href
+
+// =====================================================
+// GENERATE QR USING VERIFY CODE
+// =====================================================
+//
+// IMPORTANT:
+// QR NO LONGER USES MEMBER ID.
+//
+// It uses:
+// member.verify
+//
+// Example:
+// aB7xQ2
+//
+// The QR opens:
+// verify.htm?verify=aB7xQ2
+// =====================================================
+
+if(!member.verify){
+
+console.error(
+"Verify code missing for this member."
 );
+
+alert(
+"Verification code is missing for this member."
+);
+
+return;
 
 }
 
+generateQR(
+member.verify
+);
+
+}
 
 // =====================================================
 // QR CODE
 // =====================================================
 
-function generateQR(memberId){
+function generateQR(verifyCode){
 
 document
 .getElementById("qrcode")
 .innerHTML = "";
+
+
+// =====================================================
+// BUILD VERIFICATION URL
+// =====================================================
+//
+// QR will contain:
+//
+// verify.htm?verify=aB7xQ2
+//
+// instead of:
+//
+// memberId
+// =====================================================
+
+const verificationURL =
+new URL(
+"verify.htm",
+window.location.href
+);
+
+verificationURL.searchParams.set(
+"verify",
+verifyCode
+);
+
+
+// =====================================================
+// GENERATE QR
+// =====================================================
 
 new QRCode(
 
@@ -462,7 +524,7 @@ document.getElementById(
 {
 
 text:
-memberId,
+verificationURL.href,
 
 width:120,
 
@@ -473,7 +535,6 @@ height:120
 );
 
 }
-
 
 // =====================================================
 // PDF DOWNLOAD
@@ -543,15 +604,116 @@ memberId + ".pdf"
 function openVerification(){
 
 const memberId =
-document.getElementById("memberId").innerText;
+document
+.getElementById("memberId")
+.innerText;
+
+
+// The card itself still uses Member ID internally
+// to load the member record.
+//
+// We need the Verify code for public verification,
+// so obtain it from the member record again.
+
+if(!memberId){
+
+alert(
+"Member ID is missing."
+);
+
+return;
+
+}
+
+
+loadMemberForVerification(
+memberId
+);
+
+}
+
+
+async function loadMemberForVerification(
+memberId
+){
+
+try{
+
+const response =
+await fetch(
+
+SCRIPT_URL +
+"?action=getMember&memberId=" +
+encodeURIComponent(memberId)
+
+);
+
+const result =
+await response.json();
+
+
+if(
+result.status !== "success"
+){
+
+alert(
+"Unable to find member verification code."
+);
+
+return;
+
+}
+
+
+const verifyCode =
+result.member.verify;
+
+
+if(!verifyCode){
+
+alert(
+"Verification code is missing."
+);
+
+return;
+
+}
+
+
+// =====================================================
+// OPEN NEW VERIFICATION URL
+// =====================================================
+
+const verificationURL =
+new URL(
+"verify.htm",
+window.location.href
+);
+
+verificationURL.searchParams.set(
+"verify",
+verifyCode
+);
+
 
 window.open(
-"verify.html?id=" + encodeURIComponent(memberId),
+verificationURL.href,
 "_blank"
 );
 
 }
 
+catch(err){
+
+console.error(err);
+
+alert(
+"Unable to open member verification."
+);
+
+}
+
+}
 </script>
 
 </body>
