@@ -46,8 +46,7 @@ body{background:#f4f6f9}.form-container{background:#fff;border-radius:12px;paddi
 </form>
 </div></div>
 <script>
-const NOCODB_URL="https://app.nocodb.com/api/v3/data/pjqnbrcq6h8tuig/my00qyl601nwq3i/records";
-const NOCODB_TOKEN="nc_pat_R61hxFtBmeUUoHfMobbSrzQ323Ub9KxxcAhXSku6";
+const API_URL=window.MEMBERSHIP_API_URL||"/api/register";
 const photoInput=document.getElementById("photo"),previewBox=document.getElementById("previewBox");
 photoInput.addEventListener("change",function(){const file=this.files[0];if(file){const reader=new FileReader();reader.onload=e=>previewBox.innerHTML=`<img src="${e.target.result}" alt="Photo">`;reader.readAsDataURL(file);}});
 
@@ -55,21 +54,17 @@ document.getElementById("registrationForm").addEventListener("submit",async func
  e.preventDefault();
  const submitBtn=document.querySelector('button[type="submit"]');submitBtn.disabled=true;submitBtn.innerText="Saving...";
  try{
-  const verify=generateVerify();
-  const memberId=await generateMemberId();
   const photoFile=document.getElementById("photo").files[0];
   const photoUrl=photoFile?await convertToBase64(photoFile):"";
-  const fields={memberId,verify,fullName:document.getElementById("fullName").value.trim(),guardian:document.getElementById("guardianName").value.trim(),gender:document.getElementById("gender").value,dob:document.getElementById("dob").value,occupation:document.getElementById("occupation").value.trim(),address:document.getElementById("address").value.trim(),district:document.getElementById("district").value.trim(),state:document.getElementById("state").value.trim(),pincode:document.getElementById("pincode").value.trim(),mobile:document.getElementById("mobile").value.trim(),email:document.getElementById("email").value.trim(),membershipType:document.getElementById("membershipType").value,duration:document.getElementById("membershipDuration").value,idType:document.getElementById("idType").value,idNumber:document.getElementById("idNumber").value.trim(),issueDate:new Date().toISOString().slice(0,10),status:"Active",photoUrl, timestamp:new Date().toISOString()};
-  const response=await fetch(NOCODB_URL,{method:"POST",headers:{"xc-token":NOCODB_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({fields})});
-  const result=await response.json();
-  if(!response.ok)throw new Error(result?.message||result?.msg||"NocoDB rejected the registration.");
-  alert("Registration Successful!\n\nMembership ID : "+memberId+"\nVerify Code : "+verify);
+  const fields={fullName:document.getElementById("fullName").value.trim(),guardian:document.getElementById("guardianName").value.trim(),gender:document.getElementById("gender").value,dob:document.getElementById("dob").value,occupation:document.getElementById("occupation").value.trim(),address:document.getElementById("address").value.trim(),district:document.getElementById("district").value.trim(),state:document.getElementById("state").value.trim(),pincode:document.getElementById("pincode").value.trim(),mobile:document.getElementById("mobile").value.trim(),email:document.getElementById("email").value.trim(),membershipType:document.getElementById("membershipType").value,duration:document.getElementById("membershipDuration").value,idType:document.getElementById("idType").value,idNumber:document.getElementById("idNumber").value.trim(),photoUrl};
+  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.success)throw new Error(result?.message||"Backend rejected the registration.");
+  alert("Registration Successful!\n\nMembership ID : "+result.memberId+"\nVerify Code : "+result.verify);
   document.getElementById("registrationForm").reset();previewBox.innerHTML="<span>Preview</span>";
- }catch(error){console.error(error);alert("Registration failed.\n\n"+(error.message||"Unable to connect to NocoDB."));}
+ }catch(error){console.error(error);alert("Registration failed.\n\n"+(error.message||"Unable to connect to the membership backend."));}
  submitBtn.disabled=false;submitBtn.innerText="Submit Registration";
 });
-function generateVerify(){const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";let out="";const bytes=new Uint8Array(6);crypto.getRandomValues(bytes);for(let i=0;i<6;i++)out+=chars[bytes[i]%chars.length];return out;}
-async function generateMemberId(){const response=await fetch(NOCODB_URL+"?limit=1&sort=-Id",{headers:{"xc-token":NOCODB_TOKEN}});if(!response.ok)return "SDLM"+Date.now().toString().slice(-6);const data=await response.json();const lastId=Number(data?.records?.[0]?.id)||0;return "SDLM"+String(lastId+1).padStart(4,"0");}
 function convertToBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.readAsDataURL(file);reader.onload=()=>resolve(reader.result);reader.onerror=reject;});}
 </script>
 </body>
