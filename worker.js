@@ -34,7 +34,7 @@ async function handleRegistration(request,env){
   const created=await safeJson(createResponse);const recordId=getRecordId(created?.records?.[0]);
   if(recordId===undefined)return json({success:false,message:"NocoDB created the record but did not return its record ID."},502,request);
   const memberId=`SDLM${String(recordId).padStart(4,"0")}`;
-  const updateResponse=await nocodbFetch(env,{method:"PATCH",body:JSON.stringify([{id:recordId,fields:{memberId}}])});
+  const updateResponse=await nocodbFetch(env,{method:"PATCH",body:JSON.stringify([{id:Number(recordId),fields:{memberId}}])});
   if(!updateResponse.ok)return json({success:false,message:"Member record was created, but assigning the Membership ID failed.",verify:fields.verify,recordId},502,request);
   return json({success:true,memberId,verify:fields.verify,recordId},200,request)
 }
@@ -66,9 +66,10 @@ async function handleUpdateMember(request,env){
   const memberId=String(input?.memberId||"").trim();if(!memberId)return json({success:false,message:"memberId is required."},400,request);
   try{
     const record=await getRecordByMemberId(env,memberId);if(!record)return json({success:false,message:"Member not found."},404,request);
-    const recordId=getRecordId(record);if(recordId===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);
+    const rawRecordId=getRecordId(record);if(rawRecordId===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);
+    const recordId=Number(rawRecordId);if(!Number.isSafeInteger(recordId)||recordId<=0)return json({success:false,message:"Invalid NocoDB record ID."},502,request);
     const fields={};for(const key of ALLOWED_FIELDS)if(Object.prototype.hasOwnProperty.call(input,key))fields[key]=input[key];
-    delete fields.issueDate;delete fields.timestamp;
+    delete fields.issueDate;delete fields.timestamp;delete fields.memberId;delete fields.verify;
     if(Object.prototype.hasOwnProperty.call(fields,"fullName")&&!String(fields.fullName).trim())return json({success:false,message:"Full Name is required."},400,request);
     const payload=[{id:recordId,fields}];
     const response=await nocodbFetch(env,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
@@ -99,7 +100,7 @@ async function handleDeleteMember(request,env){
   try{
     const record=await getRecordByMemberId(env,memberId);if(!record)return json({success:false,message:"Member not found."},404,request);
     const recordId=getRecordId(record);if(recordId===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);
-    const response=await nocodbFetch(env,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify([{id:recordId}])});if(!response.ok)return forwardNocoDBError(response,request);
+    const response=await nocodbFetch(env,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify([{id:Number(recordId)}])});if(!response.ok)return forwardNocoDBError(response,request);
     return json({success:true,message:`Member ${memberId} deleted successfully.`},200,request)
   }catch(e){return json({success:false,message:e?.message||"Delete failed."},502,request)}
 }
