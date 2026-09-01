@@ -46,31 +46,22 @@ const API_BASE=window.MEMBERSHIP_API_BASE||"https://library-membership-system.li
 let currentVerifyCode="";
 const params=new URLSearchParams(window.location.search);
 const memberId=params.get("id")||params.get("memberId");
+if(!memberId){alert("Member ID missing in URL");}else{loadMember(memberId);}
 
-if(!memberId){ alert("Member ID missing in URL"); } else { loadMember(memberId); }
+async function loadMember(id){try{const response=await fetch(API_BASE+"/member?memberId="+encodeURIComponent(id)+"&_="+Date.now(),{cache:"no-store"});const result=await response.json();if(!response.ok||!result.success||!result.member)throw new Error(result.message||"Member not found.");fillCard(result.member);}catch(err){console.error(err);document.getElementById("memberName").innerText="Unable to load";alert("Unable to load member data.\n\n"+(err.message||err));}}
 
-async function loadMember(id){
- try{
-  const url=API_BASE+"/member?memberId="+encodeURIComponent(id)+"&_="+Date.now();
-  const response=await fetch(url,{method:"GET",cache:"no-store"});
-  const result=await response.json();
-  if(!response.ok||!result.success||!result.member) throw new Error(result.message||"Member not found.");
-  fillCard(result.member);
- }catch(err){
-  console.error(err);
-  document.getElementById("memberName").innerText="Unable to load";
-  alert("Unable to load member data.\n\n"+(err.message||err));
- }
-}
-
-function driveImageUrl(url){
- if(!url)return "https://via.placeholder.com/160x190?text=Photo";
- const value=String(url).trim();
- let match=value.match(/[?&]id=([A-Za-z0-9_-]+)/);
- if(match)return "https://drive.google.com/thumbnail?id="+match[1]+"&sz=w600";
- match=value.match(/\/d\/([A-Za-z0-9_-]+)/);
- if(match)return "https://drive.google.com/thumbnail?id="+match[1]+"&sz=w600";
- return value;
+function photoUrl(value){
+ const fallback="https://via.placeholder.com/160x190?text=Photo";
+ if(!value)return fallback;
+ if(Array.isArray(value))value=value[0];
+ if(typeof value==="object"&&value!==null)value=value.url||value.signedUrl||value.downloadUrl||value.path||value.data||"";
+ if(!value)return fallback;
+ let v=String(value).trim();
+ if(v[0]==="["||v[0]==="{"){try{return photoUrl(JSON.parse(v))}catch(e){}}
+ if(/^data:image\//i.test(v))return v;
+ if(/^https?:\/\//i.test(v)){const m=v.match(/[?&]id=([A-Za-z0-9_-]+)/)||v.match(/\/d\/([A-Za-z0-9_-]+)/);return m?"https://drive.google.com/thumbnail?id="+m[1]+"&sz=w600":v;}
+ if(/^[A-Za-z0-9+/=\r\n]+$/.test(v)&&v.length>100)return"data:image/jpeg;base64,"+v.replace(/\s/g,"");
+ return v;
 }
 
 function fillCard(member){
@@ -79,38 +70,15 @@ function fillCard(member){
  document.getElementById("memberType").innerText=member.membershipType||"";
  document.getElementById("issueDate").innerText=member.issueDate||member.timestamp||"";
  document.getElementById("membershipStatus").innerText=member.status||member.memberStatus||"Active";
- document.getElementById("memberPhoto").src=driveImageUrl(member.photoUrl);
- document.getElementById("memberPhoto").onerror=function(){this.src="https://via.placeholder.com/160x190?text=Photo";};
+ const photo=document.getElementById("memberPhoto");photo.onerror=function(){this.onerror=null;this.src="https://via.placeholder.com/160x190?text=Photo";};photo.src=photoUrl(member.photoUrl);
  currentVerifyCode=String(member.verify||"").trim();
  if(!currentVerifyCode){alert("Verification code is missing for this member.");return;}
  generateQR(currentVerifyCode);
 }
 
-function generateQR(code){
- const box=document.getElementById("qrcode");
- box.innerHTML="";
- const verificationURL=new URL("verify.html",window.location.href);
- verificationURL.searchParams.set("verify",code);
- new QRCode(box,{text:verificationURL.href,width:120,height:120,correctLevel:QRCode.CorrectLevel.M});
-}
-
-function openVerification(){
- if(!currentVerifyCode){alert("Verification code is missing.");return;}
- const url=new URL("verify.html",window.location.href);
- url.searchParams.set("verify",currentVerifyCode);
- window.open(url.href,"_blank");
-}
-
-async function downloadCard(){
- try{
-  const canvas=await html2canvas(document.getElementById("membershipCard"),{scale:3,useCORS:true,allowTaint:false,backgroundColor:"#ffffff"});
-  const imgData=canvas.toDataURL("image/png");
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF("landscape","mm","a4");
-  pdf.addImage(imgData,"PNG",10,10,277,170);
-  pdf.save((document.getElementById("memberId").innerText||"membership-card")+".pdf");
- }catch(err){console.error(err);alert("Unable to generate PDF.");}
-}
+function generateQR(code){const box=document.getElementById("qrcode");box.innerHTML="";const verificationURL=new URL("verify.html",window.location.href);verificationURL.searchParams.set("verify",code);new QRCode(box,{text:verificationURL.href,width:120,height:120,correctLevel:QRCode.CorrectLevel.M});}
+function openVerification(){if(!currentVerifyCode){alert("Verification code is missing.");return;}const url=new URL("verify.html",window.location.href);url.searchParams.set("verify",currentVerifyCode);window.open(url.href,"_blank");}
+async function downloadCard(){try{const canvas=await html2canvas(document.getElementById("membershipCard"),{scale:3,useCORS:true,allowTaint:false,backgroundColor:"#ffffff"});const imgData=canvas.toDataURL("image/png");const{jsPDF}=window.jspdf;const pdf=new jsPDF("landscape","mm","a4");pdf.addImage(imgData,"PNG",10,10,277,170);pdf.save((document.getElementById("memberId").innerText||"membership-card")+".pdf");}catch(err){console.error(err);alert("Unable to generate PDF.");}}
 </script>
 </body>
 </html>
