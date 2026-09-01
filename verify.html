@@ -26,6 +26,7 @@ body{background:#f4f6f9;min-height:100vh}.verify-card{max-width:700px;margin:aut
 <h3 id="verifyStatus"></h3><hr>
 <p><strong>Name:</strong> <span id="memberName"></span></p>
 <p><strong>Member ID:</strong> <span id="memberId"></span></p>
+<p><strong>Email:</strong> <span id="memberEmail"></span></p>
 <p><strong>Membership Type:</strong> <span id="memberType"></span></p>
 <p><strong>Status:</strong> <span id="memberStatus"></span></p>
 </div>
@@ -62,6 +63,7 @@ function loadMemberData(member){
  document.getElementById("errorArea").style.display="none";
  document.getElementById("memberName").innerText=member.fullName||"";
  document.getElementById("memberId").innerText=member.memberId||"";
+ document.getElementById("memberEmail").innerText=member.email||"";
  document.getElementById("memberType").innerText=member.membershipType||"";
  const status=member.memberStatus||member.status||"";
  document.getElementById("memberStatus").innerText=status;
