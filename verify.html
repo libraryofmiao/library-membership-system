@@ -13,7 +13,7 @@ body{background:#f4f6f9;min-height:100vh}.verify-card{max-width:700px;margin:aut
 <div class="container py-5">
 <div class="verify-card">
 <div class="text-center">
-<img class="logo" src="https://drive.google.com/thumbnail?id=1mLDm4Y1bu7UG-WP7h-RzRoDrpQTwY2pe&sz=w300" alt="Library Logo">
+<img class="logo" src="https://drive.google.com/thumbnail?id=16Rqpa2Wz6SEv5TWrt9uNAIvng9UQzMW2&sz=w300" alt="Library Logo">
 <h2>Sub Divisional Library Miao</h2>
 <h4 class="mb-4">Member Verification</h4>
 </div>
@@ -34,18 +34,9 @@ body{background:#f4f6f9;min-height:100vh}.verify-card{max-width:700px;margin:aut
 </div></div>
 <script>
 const API_BASE=window.MEMBERSHIP_API_BASE||"https://library-membership-system.libraryofmiao.workers.dev/api";
+const FALLBACK="https://via.placeholder.com/180x220?text=Photo";
 const verifyCode=(new URLSearchParams(window.location.search).get("verify")||"").trim();
 if(!verifyCode){showError("No verification code was supplied. Please scan a valid membership QR code.");}else{verifyMember(verifyCode);}
-
-function driveImageUrl(url){
- if(!url)return "https://via.placeholder.com/180x220?text=Photo";
- const value=String(url).trim();
- let match=value.match(/[?&]id=([A-Za-z0-9_-]+)/);
- if(match)return "https://drive.google.com/thumbnail?id="+match[1]+"&sz=w600";
- match=value.match(/\/d\/([A-Za-z0-9_-]+)/);
- if(match)return "https://drive.google.com/thumbnail?id="+match[1]+"&sz=w600";
- return value;
-}
 
 async function verifyMember(code){
  try{
@@ -75,9 +66,22 @@ function loadMemberData(member){
  const status=member.memberStatus||member.status||"";
  document.getElementById("memberStatus").innerText=status;
  document.getElementById("verifyStatus").innerHTML=String(status).trim().toLowerCase()==="active"?'<span class="status-active">✓ VERIFIED MEMBER</span>':'<span class="status-inactive">✗ INACTIVE MEMBER</span>';
+ loadPhoto(member.memberId);
+}
+
+async function loadPhoto(memberId){
  const photo=document.getElementById("memberPhoto");
- photo.src=driveImageUrl(member.photoUrl);
- photo.onerror=function(){this.src="https://via.placeholder.com/180x220?text=Photo";};
+ if(!memberId){photo.src=FALLBACK;return;}
+ try{
+  const response=await fetch(API_BASE+"/photo?memberId="+encodeURIComponent(memberId),{method:"GET",cache:"force-cache"});
+  if(!response.ok)throw new Error("Photo unavailable");
+  const blob=await response.blob();
+  if(!blob.type.startsWith("image/"))throw new Error("Invalid image response");
+  const objectUrl=URL.createObjectURL(blob);
+  photo.onload=function(){URL.revokeObjectURL(objectUrl);};
+  photo.onerror=function(){URL.revokeObjectURL(objectUrl);photo.src=FALLBACK;};
+  photo.src=objectUrl;
+ }catch(err){console.warn("Member photo load failed:",err);photo.src=FALLBACK;}
 }
 </script>
 </body>
