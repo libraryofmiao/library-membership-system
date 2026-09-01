@@ -26,6 +26,7 @@ body{background:#f5f5f5}.card-wrapper{max-width:920px;margin:auto}.member-card{w
 <div class="col-md-6"><div class="member-info">
 <strong>Name:</strong> <span id="memberName" class="loading">Loading...</span><br>
 <strong>Member ID:</strong> <span id="memberId">Loading...</span><br>
+<strong>Email:</strong> <span id="memberEmail">-</span><br>
 <strong>Membership:</strong> <span id="memberType">-</span><br>
 <strong>Issue Date:</strong> <span id="issueDate">-</span><br>
 <strong>Status:</strong> <span id="membershipStatus">-</span>
@@ -76,6 +77,7 @@ async function loadPhoto(id){
 function fillCard(member,id){
  document.getElementById("memberName").innerText=member.fullName||"";
  document.getElementById("memberId").innerText=member.memberId||"";
+ document.getElementById("memberEmail").innerText=member.email||"";
  document.getElementById("memberType").innerText=member.membershipType||"";
  document.getElementById("issueDate").innerText=member.issueDate||member.timestamp||"";
  document.getElementById("membershipStatus").innerText=member.status||member.memberStatus||"Active";
