@@ -16,6 +16,7 @@ export default {
     if (url.pathname === "/api/members" && request.method === "GET") return handleMembers(request, env);
     if (url.pathname === "/api/member" && request.method === "GET") return handleGetMember(request, env);
     if (url.pathname === "/api/member" && request.method === "DELETE") return handleDeleteMember(request, env);
+    if (url.pathname === "/api/verify" && request.method === "GET") return handleVerify(request, env);
     return new Response("Not Found", { status: 404, headers: corsHeaders(request) });
   }
 };
@@ -83,6 +84,22 @@ async function handleDeleteMember(request, env) {
     if (!response.ok) return forwardNocoDBError(response, request);
     return json({ success: true, message: `Member ${memberId} deleted successfully.` }, 200, request);
   } catch (e) { return json({ success: false, message: e?.message || "Delete failed." }, 502, request); }
+}
+
+async function handleVerify(request, env) {
+  const url = new URL(request.url);
+  const verify = String(url.searchParams.get("verify") || "").trim();
+  if (!verify || !/^[A-Za-z0-9]{6}$/.test(verify)) {
+    return json({ success: false, message: "Invalid verification code." }, 400, request);
+  }
+  try {
+    const records = await findByField(env, "verify", verify);
+    if (!records.length) return json({ success: false, message: "Member not found. The QR code may be invalid." }, 404, request);
+    const r = records[0];
+    return json({ success: true, member: { id: r.id, ...(r.fields || {}) } }, 200, request);
+  } catch (e) {
+    return json({ success: false, message: e?.message || "Unable to verify member." }, 502, request);
+  }
 }
 
 async function getAllRecords(env) {
