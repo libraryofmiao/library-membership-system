@@ -32,7 +32,7 @@ async function handleRegistration(request,env){
   const createResponse=await nocodbFetch(env,{method:"POST",body:JSON.stringify([{fields}])});
   if(!createResponse.ok)return forwardNocoDBError(createResponse,request);
   const created=await safeJson(createResponse);const recordId=getRecordId(created?.records?.[0]);
-  if(recordId===undefined||recordId===null||recordId==="")return json({success:false,message:"NocoDB created the record but did not return its record ID."},502,request);
+  if(recordId===undefined)return json({success:false,message:"NocoDB created the record but did not return its record ID."},502,request);
   const memberId=`SDLM${String(recordId).padStart(4,"0")}`;
   const updateResponse=await nocodbFetch(env,{method:"PATCH",body:JSON.stringify([{id:recordId,fields:{memberId}}])});
   if(!updateResponse.ok)return json({success:false,message:"Member record was created, but assigning the Membership ID failed.",verify:fields.verify,recordId},502,request);
@@ -48,14 +48,14 @@ async function handleMembers(request,env){
 async function handleGetMember(request,env){
   const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim();
   if(!memberId)return json({success:false,message:"memberId is required."},400,request);
-  try{const r=await getRecordByMemberId(env,memberId);if(!r)return json({success:false,message:"Member not found."},404,request);return json({success:true,member:{id:getRecordId(r),...(r.fields||{})}},200,request)}
+  try{const r=await getRecordByMemberId(env,memberId);if(!r)return json({success:false,message:"Member not found."},404,request);const id=getRecordId(r);if(id===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);return json({success:true,member:{id,...(r.fields||{})}},200,request)}
   catch(e){return json({success:false,message:e?.message||"Unable to load member."},502,request)}
 }
 
 async function handleGetMemberBasic(request,env){
   const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim();
   if(!memberId)return json({success:false,message:"memberId is required."},400,request);
-  try{const r=await getRecordByMemberId(env,memberId);if(!r)return json({success:false,message:"Member not found."},404,request);const fields={...(r.fields||{})};delete fields.photoUrl;return json({success:true,member:{id:getRecordId(r),...fields}},200,request)}
+  try{const r=await getRecordByMemberId(env,memberId);if(!r)return json({success:false,message:"Member not found."},404,request);const id=getRecordId(r);if(id===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);const fields={...(r.fields||{})};delete fields.photoUrl;return json({success:true,member:{id,...fields}},200,request)}
   catch(e){return json({success:false,message:e?.message||"Unable to load member."},502,request)}
 }
 
@@ -66,11 +66,12 @@ async function handleUpdateMember(request,env){
   const memberId=String(input?.memberId||"").trim();if(!memberId)return json({success:false,message:"memberId is required."},400,request);
   try{
     const record=await getRecordByMemberId(env,memberId);if(!record)return json({success:false,message:"Member not found."},404,request);
-    const recordId=getRecordId(record);if(recordId===undefined||recordId===null||recordId==="")return json({success:false,message:"Member record ID could not be determined."},502,request);
+    const recordId=getRecordId(record);if(recordId===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);
     const fields={};for(const key of ALLOWED_FIELDS)if(Object.prototype.hasOwnProperty.call(input,key))fields[key]=input[key];
     delete fields.issueDate;delete fields.timestamp;
     if(Object.prototype.hasOwnProperty.call(fields,"fullName")&&!String(fields.fullName).trim())return json({success:false,message:"Full Name is required."},400,request);
-    const response=await nocodbFetch(env,{method:"PATCH",body:JSON.stringify([{id:recordId,fields}])});
+    const payload=[{id:recordId,fields}];
+    const response=await nocodbFetch(env,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     if(!response.ok)return forwardNocoDBError(response,request);
     return json({success:true,message:`Member ${memberId} updated successfully.`},200,request)
   }catch(e){return json({success:false,message:e?.message||"Update failed."},502,request)}
@@ -97,48 +98,33 @@ async function handleDeleteMember(request,env){
   const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim();if(!memberId)return json({success:false,message:"memberId is required."},400,request);
   try{
     const record=await getRecordByMemberId(env,memberId);if(!record)return json({success:false,message:"Member not found."},404,request);
-    const recordId=getRecordId(record);if(recordId===undefined||recordId===null||recordId==="")return json({success:false,message:"Member record ID could not be determined."},502,request);
-    const response=await nocodbFetch(env,{method:"DELETE",body:JSON.stringify([{id:recordId}])});if(!response.ok)return forwardNocoDBError(response,request);
+    const recordId=getRecordId(record);if(recordId===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);
+    const response=await nocodbFetch(env,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify([{id:recordId}])});if(!response.ok)return forwardNocoDBError(response,request);
     return json({success:true,message:`Member ${memberId} deleted successfully.`},200,request)
   }catch(e){return json({success:false,message:e?.message||"Delete failed."},502,request)}
 }
 
 async function handleVerify(request,env){
   const url=new URL(request.url),verify=String(url.searchParams.get("verify")||"").trim();if(!verify||!/^[A-Za-z0-9]{6}$/.test(verify))return json({success:false,message:"Invalid verification code."},400,request);
-  try{const records=await findByField(env,"verify",verify);if(!records.length)return json({success:false,message:"Member not found. The QR code may be invalid."},404,request);const r=records[0];return json({success:true,member:{id:getRecordId(r),...(r.fields||{})}},200,request)}
+  try{const records=await findByField(env,"verify",verify);if(!records.length)return json({success:false,message:"Member not found. The QR code may be invalid."},404,request);const r=records[0];const id=getRecordId(r);if(id===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);return json({success:true,member:{id,...(r.fields||{})}},200,request)}
   catch(e){return json({success:false,message:e?.message||"Unable to verify member."},502,request)}
 }
 
 async function getRecordByMemberId(env,memberId){
-  const records=await getAllRecords(env);
-  const wanted=String(memberId).trim();
-  return records.find(record=>String(record?.fields?.memberId??"").trim()===wanted)||null;
+  const records=await getAllRecords(env);const wanted=String(memberId).trim();return records.find(record=>String(record?.fields?.memberId??"").trim()===wanted)||null;
 }
 
 async function getAllRecords(env){
   const records=[];let nextUrl=NOCODB_BASE;
-  while(nextUrl){
-    const response=await nocoRequest(nextUrl,env);if(!response.ok)throw new Error(`NocoDB returned HTTP ${response.status}`);
-    const data=await response.json();if(Array.isArray(data?.records))records.push(...data.records);nextUrl=data?.next||null;
-    if(nextUrl){const parsed=new URL(nextUrl);if(parsed.origin!==new URL(NOCODB_BASE).origin)throw new Error("Invalid NocoDB pagination URL.")}
-  }
+  while(nextUrl){const response=await nocoRequest(nextUrl,env);if(!response.ok)throw new Error(`NocoDB returned HTTP ${response.status}`);const data=await response.json();if(Array.isArray(data?.records))records.push(...data.records);nextUrl=data?.next||null;if(nextUrl){const parsed=new URL(nextUrl);if(parsed.origin!==new URL(NOCODB_BASE).origin)throw new Error("Invalid NocoDB pagination URL.")}}
   return records
 }
 
 async function findByField(env,field,value){const records=await getAllRecords(env);const wanted=String(value);return records.filter(record=>String(record?.fields?.[field]??"").trim()===wanted)}
 async function nocodbFetch(env,options){return nocoRequest(NOCODB_BASE,env,options)}
-async function nocoRequest(url,env,options={}){
-  const maxAttempts=3;let response;
-  for(let attempt=0;attempt<maxAttempts;attempt++){
-    response=await fetch(url,{...options,headers:{...(options.headers||{}),"xc-token":env.NOCODB_TOKEN,"Accept":"application/json"}});
-    if(response.status!==429||attempt===maxAttempts-1)return response;
-    const retryAfter=Number(response.headers.get("Retry-After")||"");const delay=Number.isFinite(retryAfter)&&retryAfter>0?Math.min(retryAfter*1000,5000):500*(attempt+1);await new Promise(resolve=>setTimeout(resolve,delay));
-  }
-  return response
-}
-
+async function nocoRequest(url,env,options={}){const maxAttempts=3;let response;for(let attempt=0;attempt<maxAttempts;attempt++){response=await fetch(url,{...options,headers:{...(options.headers||{}),"xc-token":env.NOCODB_TOKEN,"Accept":"application/json"}});if(response.status!==429||attempt===maxAttempts-1)return response;const retryAfter=Number(response.headers.get("Retry-After")||"");const delay=Number.isFinite(retryAfter)&&retryAfter>0?Math.min(retryAfter*1000,5000):500*(attempt+1);await new Promise(resolve=>setTimeout(resolve,delay))}return response}
 async function forwardNocoDBError(response,request){const data=await safeJson(response);return json({success:false,message:data?.message||data?.msg||"NocoDB rejected the request.",error:data},response.status||502,request)}
-function getRecordId(record){if(!record)return undefined;if(record.id!==undefined&&record.id!==null&&record.id!=="")return record.id;if(record.id_fields?.Id!==undefined&&record.id_fields?.Id!==null&&record.id_fields?.Id!=="")return record.id_fields.Id;if(record.fields?.Id!==undefined&&record.fields?.Id!==null&&record.fields?.Id!=="")return record.fields.Id;return undefined}
+function getRecordId(record){if(!record)return undefined;const candidates=[record.id,record.id_fields?.Id,record.fields?.Id,record.Id,record.recordId,record.rowId];for(const value of candidates){if(typeof value==="string"&&value.trim()!=="")return value.trim();if(typeof value==="number"&&Number.isFinite(value)&&value>=0)return value}return undefined}
 function generateVerify(){const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",bytes=new Uint8Array(6);crypto.getRandomValues(bytes);let result="";for(let i=0;i<bytes.length;i++)result+=chars[bytes[i]%chars.length];return result}
 async function safeJson(response){try{return await response.json()}catch{return null}}
 function corsHeaders(request){const origin=request.headers.get("Origin");const requestedHeaders=request.headers.get("Access-Control-Request-Headers");return {"Access-Control-Allow-Origin":origin||"*","Access-Control-Allow-Methods":"GET, POST, PATCH, DELETE, OPTIONS","Access-Control-Allow-Headers":requestedHeaders||"Content-Type, Accept, X-Requested-With","Access-Control-Max-Age":"86400","Vary":"Origin, Access-Control-Request-Headers","Cache-Control":"no-store"}}
