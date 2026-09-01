@@ -1,535 +1,473 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Library Membership Registration</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<title>Member Verification</title>
+
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+rel="stylesheet">
 
 <style>
+
 body{
-    background:#f4f6f9;
+background:#f4f6f9;
 }
 
-.form-container{
-    background:#fff;
-    border-radius:12px;
-    padding:30px;
-    box-shadow:0 0 15px rgba(0,0,0,0.08);
+.verify-card{
+max-width:700px;
+margin:auto;
+background:#fff;
+padding:30px;
+border-radius:15px;
+box-shadow:0 0 15px rgba(0,0,0,.1);
 }
 
-.required{
-    color:red;
+.member-photo{
+width:180px;
+height:220px;
+object-fit:cover;
+border:2px solid #ddd;
+border-radius:10px;
 }
 
-.photo-preview{
-    width:150px;
-    height:180px;
-    border:2px dashed #ccc;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    overflow:hidden;
-    margin-top:10px;
-    background:#fafafa;
+.status-active{
+color:green;
+font-weight:bold;
+font-size:22px;
 }
 
-.photo-preview img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
+.status-inactive{
+color:red;
+font-weight:bold;
+font-size:22px;
 }
 
-h2{
-    font-weight:700;
+.logo{
+height:90px;
+margin-bottom:15px;
 }
+
 </style>
+
 </head>
 
 <body>
 
 <div class="container py-5">
 
-<div class="form-container">
-
-<div class="text-center mb-4">
-<h2>Library Membership Registration Form</h2>
-<p class="text-muted">
-Please fill all required details carefully.
-</p>
-</div>
-
-<form id="registrationForm">
-
-<div class="row">
-
-<div class="col-md-6 mb-3">
-<label class="form-label">
-Full Name <span class="required">*</span>
-</label>
-<input type="text"
-class="form-control"
-id="fullName"
-required>
-</div>
-
-<div class="col-md-6 mb-3">
-<label class="form-label">
-Father's / Guardian's Name
-</label>
-<input type="text"
-class="form-control"
-id="guardianName">
-</div>
-
-<div class="col-md-4 mb-3">
-<label class="form-label">
-Gender <span class="required">*</span>
-</label>
-
-<select class="form-select" id="gender" required>
-<option value="">Select</option>
-<option>Male</option>
-<option>Female</option>
-<option>Other</option>
-</select>
-</div>
-
-<div class="col-md-4 mb-3">
-<label class="form-label">
-Date of Birth <span class="required">*</span>
-</label>
-<input type="date"
-class="form-control"
-id="dob"
-required>
-</div>
-
-<div class="col-md-4 mb-3">
-<label class="form-label">
-Occupation
-</label>
-<input type="text"
-class="form-control"
-id="occupation">
-</div>
-
-</div>
-
-<div class="mb-3">
-<label class="form-label">
-Address <span class="required">*</span>
-</label>
-<textarea class="form-control"
-id="address"
-rows="3"
-required></textarea>
-</div>
-
-<div class="row">
-
-<div class="col-md-4 mb-3">
-<label class="form-label">
-District
-</label>
-<input type="text"
-class="form-control"
-id="district">
-</div>
-
-<div class="col-md-4 mb-3">
-<label class="form-label">
-State
-</label>
-<input type="text"
-class="form-control"
-id="state">
-</div>
-
-<div class="col-md-4 mb-3">
-<label class="form-label">
-PIN Code
-</label>
-<input type="text"
-class="form-control"
-id="pincode"
-maxlength="6">
-</div>
-
-</div>
-
-<div class="row">
-
-<div class="col-md-6 mb-3">
-<label class="form-label">
-Mobile Number <span class="required">*</span>
-</label>
-<input type="tel"
-class="form-control"
-id="mobile"
-pattern="[0-9]{10}"
-maxlength="10"
-required>
-</div>
-
-<div class="col-md-6 mb-3">
-<label class="form-label">
-Email Address
-</label>
-<input type="email"
-class="form-control"
-id="email">
-</div>
-
-</div>
-
-<div class="row">
-
-<div class="col-md-6 mb-3">
-<label class="form-label">
-Membership Type <span class="required">*</span>
-</label>
-
-<select class="form-select"
-id="membershipType"
-required>
-
-<option value="">Select</option>
-
-<option>Student</option>
-<option>General</option>
-<option>Senior Citizen</option>
-<option>Research Scholar</option>
-<option>Faculty</option>
-
-</select>
-</div>
-
-<div class="col-md-6 mb-3">
-<label class="form-label">
-Membership Duration
-</label>
-
-<select class="form-select"
-id="membershipDuration">
-
-<option>Permanent</option>
-
-</select>
-</div>
-
-</div>
-
-<div class="row">
-
-<div class="col-md-6 mb-3">
-
-<label class="form-label">
-ID Proof Type
-</label>
-
-<select class="form-select"
-id="idType">
-
-<option value="">Select</option>
-<option>Aadhaar Card</option>
-<option>Voter ID</option>
-<option>PAN Card</option>
-<option>Driving License</option>
-<option>Passport</option>
-
-</select>
-
-</div>
-
-<div class="col-md-6 mb-3">
-
-<label class="form-label">
-ID Proof Number
-</label>
-
-<input type="text"
-class="form-control"
-id="idNumber">
-
-</div>
-
-</div>
-
-<hr>
-
-<h5>Photograph Upload</h5>
-
-<div class="mb-3">
-
-<label class="form-label">
-Upload Passport Size Photograph
-</label>
-
-<input type="file"
-class="form-control"
-id="photo"
-accept="image/*">
-
-<div class="photo-preview"
-id="previewBox">
-
-<span>Preview</span>
-
-</div>
-
-</div>
-
-<hr>
-
-<div class="form-check mb-4">
-
-<input class="form-check-input"
-type="checkbox"
-id="declaration"
-required>
-
-<label class="form-check-label">
-
-I hereby declare that the information
-provided above is true and correct.
-
-</label>
-
-</div>
+<div class="verify-card">
 
 <div class="text-center">
 
-<button type="submit"
-class="btn btn-primary btn-lg">
+<img
+class="logo"
+src="https://drive.google.com/thumbnail?id=1mLDm4Y1bu7UG-WP7h-RzRoDrpQTwY2pe"
+alt="Library Logo">
 
-Submit Registration
+<h2>Sub Divisional Library Miao</h2>
 
-</button>
-
-<button type="reset"
-class="btn btn-secondary btn-lg ms-2">
-
-Reset
-
-</button>
+<h4 class="mb-4">
+Member Verification
+</h4>
 
 </div>
 
-</form>
+
+<!-- =====================================
+     LOADING
+===================================== -->
+
+<div id="loading" class="text-center">
+
+<div class="spinner-border text-primary"></div>
+
+<p class="mt-3">
+Verifying Member...
+</p>
+
+</div>
+
+
+<!-- =====================================
+     RESULT
+===================================== -->
+
+<div id="resultArea" style="display:none;">
+
+<div class="row">
+
+<div class="col-md-4 text-center">
+
+<img
+id="memberPhoto"
+class="member-photo"
+src="https://via.placeholder.com/180x220"
+alt="Member Photo">
+
+</div>
+
+
+<div class="col-md-8">
+
+<h3 id="verifyStatus"></h3>
+
+<hr>
+
+
+<p>
+<strong>Name:</strong>
+<span id="memberName"></span>
+</p>
+
+
+<p>
+<strong>Member ID:</strong>
+<span id="memberId"></span>
+</p>
+
+
+<p>
+<strong>Membership Type:</strong>
+<span id="memberType"></span>
+</p>
+
+
+<p>
+<strong>Status:</strong>
+<span id="memberStatus"></span>
+</p>
 
 </div>
 
 </div>
+
+</div>
+
+
+<!-- =====================================
+     NOT FOUND
+===================================== -->
+
+<div id="notFound" style="display:none;">
+
+<div class="alert alert-danger text-center">
+
+<h3>
+✗ MEMBER NOT FOUND
+</h3>
+
+<p>
+The QR Code is invalid or the member does not exist.
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
 
 <script>
 
-// =====================================================
-// GOOGLE APPS SCRIPT WEB APP URL
-// Replace after deployment
-// =====================================================
+// =====================================
+// APPS SCRIPT URL
+// =====================================
 
 const SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbwu7yamVKdb7h9VWGGQ_eUHGpUJesvP4tinAEHAKLhc31tyeEEeOyPdboF0AUwZJLjS/exec";
 
 
-// =====================================================
-// PHOTO PREVIEW
-// =====================================================
+// =====================================
+// GET VERIFY CODE FROM URL
+// =====================================
+//
+// NEW QR FORMAT:
+//
+// verify.htm?verify=aB7xQ2
+//
+// The old:
+//
+// verify.htm?id=SDLM-2026-0001
+//
+// is no longer used.
+//
+// =====================================
 
-const photoInput = document.getElementById("photo");
-const previewBox = document.getElementById("previewBox");
-
-photoInput.addEventListener("change", function () {
-
-    const file = this.files[0];
-
-    if (file) {
-
-        const reader = new FileReader();
-
-        reader.onload = function (e) {
-
-            previewBox.innerHTML =
-                `<img src="${e.target.result}" alt="Photo">`;
-
-        };
-
-        reader.readAsDataURL(file);
-    }
-
-});
+const params =
+new URLSearchParams(
+window.location.search
+);
 
 
-// =====================================================
-// FORM SUBMIT
-// =====================================================
-
-document
-.getElementById("registrationForm")
-.addEventListener("submit", async function (e) {
-
-e.preventDefault();
-
-const submitBtn =
-document.querySelector('button[type="submit"]');
-
-submitBtn.disabled = true;
-submitBtn.innerText = "Saving...";
-
-try {
-
-    let photoBase64 = "";
-
-    const photoFile =
-    document.getElementById("photo").files[0];
-
-    if (photoFile) {
-
-        photoBase64 =
-        await convertToBase64(photoFile);
-
-    }
-
-    const memberData = {
-
-        fullName:
-        document.getElementById("fullName").value.trim(),
-
-        guardianName:
-        document.getElementById("guardianName").value.trim(),
-
-        gender:
-        document.getElementById("gender").value,
-
-        dob:
-        document.getElementById("dob").value,
-
-        occupation:
-        document.getElementById("occupation").value.trim(),
-
-        address:
-        document.getElementById("address").value.trim(),
-
-        district:
-        document.getElementById("district").value.trim(),
-
-        state:
-        document.getElementById("state").value.trim(),
-
-        pincode:
-        document.getElementById("pincode").value.trim(),
-
-        mobile:
-        document.getElementById("mobile").value.trim(),
-
-        email:
-        document.getElementById("email").value.trim(),
-
-        membershipType:
-        document.getElementById("membershipType").value,
-
-        membershipDuration:
-        document.getElementById("membershipDuration").value,
-
-        idType:
-        document.getElementById("idType").value,
-
-        idNumber:
-        document.getElementById("idNumber").value.trim(),
-
-        photo:
-        photoBase64
-
-    };
+const verifyCode =
+params.get("verify");
 
 
+// =====================================
+// START VERIFICATION
+// =====================================
 
-    const response =
-    await fetch(SCRIPT_URL, {
+if(
+!verifyCode
+){
 
-        method: "POST",
+document.getElementById(
+"loading"
+).style.display =
+"none";
 
-        body: JSON.stringify(memberData)
-
-    });
-
-    const result =
-    await response.json();
-
-
-
-    if (result.status === "success") {
-
-        alert(
-        "Registration Successful!\n\n" +
-        "Membership ID : " +
-        result.memberId
-        );
-
-        document
-        .getElementById("registrationForm")
-        .reset();
-
-        previewBox.innerHTML =
-        "<span>Preview</span>";
-
-    }
-
-    else {
-
-        alert(result.message);
-
-    }
+document.getElementById(
+"notFound"
+).style.display =
+"block";
 
 }
-catch (error) {
+else{
 
-    console.error(error);
-
-    alert(
-    "Unable to connect to server."
-    );
+verifyMember(
+verifyCode
+);
 
 }
 
-submitBtn.disabled = false;
-submitBtn.innerText =
-"Submit Registration";
 
-});
+// =====================================
+// VERIFY MEMBER
+// =====================================
+//
+// IMPORTANT:
+//
+// We send:
+//
+//     verify=xxxxxx
+//
+// NOT:
+//
+//     memberId=xxxxxx
+//
+// =====================================
+
+async function verifyMember(
+verifyCode
+){
+
+try{
+
+const response =
+await fetch(
+
+SCRIPT_URL +
+
+"?action=verifyMember&verify=" +
+
+encodeURIComponent(
+verifyCode
+)
+
+);
 
 
-// =====================================================
-// FILE TO BASE64
-// =====================================================
+const result =
+await response.json();
 
-function convertToBase64(file) {
 
-return new Promise((resolve, reject) => {
+console.log(
+"Verification result:",
+result
+);
 
-    const reader = new FileReader();
 
-    reader.readAsDataURL(file);
+// Hide loading
 
-    reader.onload = () => {
+document.getElementById(
+"loading"
+).style.display =
+"none";
 
-        resolve(reader.result);
 
-    };
+// Invalid code
 
-    reader.onerror = error => {
+if(
+result.valid !== true
+){
 
-        reject(error);
+document.getElementById(
+"notFound"
+).style.display =
+"block";
 
-    };
+return;
 
-});
+}
+
+
+// Valid member
+
+loadMemberData(
+result
+);
+
+}
+
+catch(err){
+
+console.error(
+"Verification error:",
+err
+);
+
+
+document.getElementById(
+"loading"
+).style.display =
+"none";
+
+
+document.getElementById(
+"notFound"
+).style.display =
+"block";
+
+}
+
+}
+
+
+// =====================================
+// LOAD MEMBER DATA
+// =====================================
+
+function loadMemberData(
+result
+){
+
+document.getElementById(
+"resultArea"
+).style.display =
+"block";
+
+
+// =====================================
+// NAME
+// =====================================
+
+document.getElementById(
+"memberName"
+).innerText =
+result.fullName || "";
+
+
+// =====================================
+// MEMBER ID
+// =====================================
+//
+// Member ID is displayed after the
+// server has already authenticated the
+// random Verify code.
+//
+// The lookup itself is NOT done using
+// Member ID.
+//
+
+document.getElementById(
+"memberId"
+).innerText =
+result.memberId || "";
+
+
+// =====================================
+// MEMBERSHIP TYPE
+// =====================================
+
+document.getElementById(
+"memberType"
+).innerText =
+result.membershipType || "";
+
+
+// =====================================
+// STATUS
+// =====================================
+
+const memberStatus =
+result.memberStatus ||
+result.status ||
+"";
+
+
+document.getElementById(
+"memberStatus"
+).innerText =
+memberStatus;
+
+
+// =====================================
+// VERIFIED / INACTIVE MESSAGE
+// =====================================
+
+if(
+
+String(
+memberStatus
+)
+.trim()
+.toLowerCase()
+===
+"active"
+
+){
+
+document.getElementById(
+"verifyStatus"
+).innerHTML =
+
+'<span class="status-active">' +
+'✓ VERIFIED MEMBER' +
+'</span>';
+
+}
+
+else{
+
+document.getElementById(
+"verifyStatus"
+).innerHTML =
+
+'<span class="status-inactive">' +
+'✗ INACTIVE MEMBER' +
+'</span>';
+
+}
+
+
+// =====================================
+// MEMBER PHOTO
+// =====================================
+
+if(
+result.photoUrl
+){
+
+document.getElementById(
+"memberPhoto"
+).src =
+result.photoUrl;
+
+}
 
 }
 
 </script>
 
 </body>
+
 </html>
+```
