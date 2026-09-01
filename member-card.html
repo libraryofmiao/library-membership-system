@@ -43,6 +43,7 @@ body{background:#f5f5f5}.card-wrapper{max-width:920px;margin:auto}.member-card{w
 </div></div>
 <script>
 const API_BASE=window.MEMBERSHIP_API_BASE||"https://library-membership-system.libraryofmiao.workers.dev/api";
+const FALLBACK="https://via.placeholder.com/160x190?text=Photo";
 let currentVerifyCode="";
 const params=new URLSearchParams(window.location.search);
 const memberId=params.get("id")||params.get("memberId");
@@ -50,18 +51,16 @@ if(!memberId){alert("Member ID missing in URL");}else{loadMember(memberId);}
 
 async function loadMember(id){try{const response=await fetch(API_BASE+"/member?memberId="+encodeURIComponent(id)+"&_="+Date.now(),{cache:"no-store"});const result=await response.json();if(!response.ok||!result.success||!result.member)throw new Error(result.message||"Member not found.");fillCard(result.member,id);}catch(err){console.error(err);document.getElementById("memberName").innerText="Unable to load";alert("Unable to load member data.\n\n"+(err.message||err));}}
 
-function photoUrl(value){
- const fallback="https://via.placeholder.com/160x190?text=Photo";
- if(!value)return fallback;
- if(Array.isArray(value))value=value[0];
- if(typeof value==="object"&&value!==null)value=value.url||value.signedUrl||value.downloadUrl||value.path||value.data||"";
- if(!value)return fallback;
+function normalizePhoto(value){
+ if(!value)return "";
+ if(Array.isArray(value))return normalizePhoto(value[0]);
+ if(typeof value==="object"&&value!==null)return normalizePhoto(value.url||value.signedUrl||value.downloadUrl||value.path||value.data||"");
  let v=String(value).trim();
- if(v[0]==="["||v[0]==="{"){try{return photoUrl(JSON.parse(v))}catch(e){}}
+ if((v[0]==="["||v[0]==="{")&&v.length<2000000){try{return normalizePhoto(JSON.parse(v));}catch(e){}}
  if(/^data:image\//i.test(v))return v;
  if(/^https?:\/\//i.test(v)){const m=v.match(/[?&]id=([A-Za-z0-9_-]+)/)||v.match(/\/d\/([A-Za-z0-9_-]+)/);return m?"https://drive.google.com/thumbnail?id="+m[1]+"&sz=w600":v;}
- if(/^[A-Za-z0-9+/=\r\n]+$/.test(v)&&v.length>100)return"data:image/jpeg;base64,"+v.replace(/\s/g,"");
- return v;
+ if(/^[A-Za-z0-9+/=\r\n]+$/.test(v)&&v.replace(/\s/g,"").length>100)return "data:image/jpeg;base64,"+v.replace(/\s/g,"");
+ return "";
 }
 
 function fillCard(member,id){
@@ -71,8 +70,18 @@ function fillCard(member,id){
  document.getElementById("issueDate").innerText=member.issueDate||member.timestamp||"";
  document.getElementById("membershipStatus").innerText=member.status||member.memberStatus||"Active";
  const photo=document.getElementById("memberPhoto");
- photo.onerror=function(){this.onerror=null;this.src=photoUrl(member.photoUrl);if(this.src.indexOf("/api/photo?")===-1)this.src="https://via.placeholder.com/160x190?text=Photo";};
- photo.src=API_BASE+"/photo?memberId="+encodeURIComponent(id)+"&_="+Date.now();
+ const direct=normalizePhoto(member.photoUrl);
+ let triedApi=false;
+ photo.onload=function(){photo.dataset.loaded="1";};
+ photo.onerror=function(){
+   if(!triedApi){
+     triedApi=true;
+     photo.src=API_BASE+"/photo?memberId="+encodeURIComponent(id)+"&_="+Date.now();
+   }else{
+     photo.onerror=null;photo.src=FALLBACK;
+   }
+ };
+ photo.src=direct||API_BASE+"/photo?memberId="+encodeURIComponent(id)+"&_="+Date.now();
  currentVerifyCode=String(member.verify||"").trim();
  if(!currentVerifyCode){alert("Verification code is missing for this member.");return;}
  generateQR(currentVerifyCode);
