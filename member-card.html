@@ -22,7 +22,7 @@ body{background:#f5f5f5}.card-wrapper{max-width:920px;margin:auto}.member-card{w
 <h3>Sub Divisional Library Miao</h3><p class="mb-0">Library Membership Card</p>
 </div>
 <div class="body-section"><div class="row align-items-start g-3">
-<div class="col-md-3 text-center"><img id="memberPhoto" class="photo" src="https://via.placeholder.com/160x190?text=Photo" alt="Member Photo"></div>
+<div class="col-md-3 text-center"><img id="memberPhoto" class="photo" loading="eager" decoding="async" src="https://via.placeholder.com/160x190?text=Photo" alt="Member Photo"></div>
 <div class="col-md-6"><div class="member-info">
 <strong>Name:</strong> <span id="memberName" class="loading">Loading...</span><br>
 <strong>Member ID:</strong> <span id="memberId">Loading...</span><br>
@@ -48,7 +48,7 @@ const params=new URLSearchParams(window.location.search);
 const memberId=params.get("id")||params.get("memberId");
 if(!memberId){alert("Member ID missing in URL");}else{loadMember(memberId);}
 
-async function loadMember(id){try{const response=await fetch(API_BASE+"/member?memberId="+encodeURIComponent(id)+"&_="+Date.now(),{cache:"no-store"});const result=await response.json();if(!response.ok||!result.success||!result.member)throw new Error(result.message||"Member not found.");fillCard(result.member);}catch(err){console.error(err);document.getElementById("memberName").innerText="Unable to load";alert("Unable to load member data.\n\n"+(err.message||err));}}
+async function loadMember(id){try{const response=await fetch(API_BASE+"/member?memberId="+encodeURIComponent(id)+"&_="+Date.now(),{cache:"no-store"});const result=await response.json();if(!response.ok||!result.success||!result.member)throw new Error(result.message||"Member not found.");fillCard(result.member,id);}catch(err){console.error(err);document.getElementById("memberName").innerText="Unable to load";alert("Unable to load member data.\n\n"+(err.message||err));}}
 
 function photoUrl(value){
  const fallback="https://via.placeholder.com/160x190?text=Photo";
@@ -64,13 +64,15 @@ function photoUrl(value){
  return v;
 }
 
-function fillCard(member){
+function fillCard(member,id){
  document.getElementById("memberName").innerText=member.fullName||"";
  document.getElementById("memberId").innerText=member.memberId||"";
  document.getElementById("memberType").innerText=member.membershipType||"";
  document.getElementById("issueDate").innerText=member.issueDate||member.timestamp||"";
  document.getElementById("membershipStatus").innerText=member.status||member.memberStatus||"Active";
- const photo=document.getElementById("memberPhoto");photo.onerror=function(){this.onerror=null;this.src="https://via.placeholder.com/160x190?text=Photo";};photo.src=photoUrl(member.photoUrl);
+ const photo=document.getElementById("memberPhoto");
+ photo.onerror=function(){this.onerror=null;this.src=photoUrl(member.photoUrl);if(this.src.indexOf("/api/photo?")===-1)this.src="https://via.placeholder.com/160x190?text=Photo";};
+ photo.src=API_BASE+"/photo?memberId="+encodeURIComponent(id)+"&_="+Date.now();
  currentVerifyCode=String(member.verify||"").trim();
  if(!currentVerifyCode){alert("Verification code is missing for this member.");return;}
  generateQR(currentVerifyCode);
