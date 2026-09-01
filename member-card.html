@@ -54,7 +54,7 @@ if(!memberId){
 
 async function loadMember(memberId){
  try{
-  const url=SCRIPT_URL+"?action=getMember&memberId="+encodeURIComponent(memberId);
+  const url=SCRIPT_URL+"?action=getMember&memberId="+encodeURIComponent(memberId)+"&_="+Date.now();
   const response=await fetch(url,{method:"GET",redirect:"follow",cache:"no-store"});
   const text=await response.text();
   let result;
@@ -62,8 +62,7 @@ async function loadMember(memberId){
    console.error("Apps Script returned non-JSON:",text);
    throw new Error("Apps Script did not return JSON. Response: "+text.substring(0,200));
   }
-  console.log("Member data:",result);
-  if(result.status!=="success"){
+  if(result.status!=="success" || !result.member){
    throw new Error(result.message||"Member not found.");
   }
   fillCard(result.member);
@@ -73,13 +72,24 @@ async function loadMember(memberId){
  }
 }
 
+function driveImageUrl(url){
+ if(!url)return "https://via.placeholder.com/160x190";
+ const value=String(url).trim();
+ let match=value.match(/[?&]id=([A-Za-z0-9_-]+)/);
+ if(match)return "https://drive.google.com/thumbnail?id="+match[1]+"&sz=w600";
+ match=value.match(/\/d\/([A-Za-z0-9_-]+)/);
+ if(match)return "https://drive.google.com/thumbnail?id="+match[1]+"&sz=w600";
+ return value;
+}
+
 function fillCard(member){
  document.getElementById("memberName").innerText=member.fullName||"";
  document.getElementById("memberId").innerText=member.memberId||"";
  document.getElementById("memberType").innerText=member.membershipType||"";
- document.getElementById("issueDate").innerText=member.issueDate||"";
+ document.getElementById("issueDate").innerText=member.issueDate||member.timestamp||"";
+ document.getElementById("membershipStatus").innerText=member.status||"Active";
  const photoElement=document.getElementById("memberPhoto");
- photoElement.src=member.photoUrl||"https://via.placeholder.com/160x190";
+ photoElement.src=driveImageUrl(member.photoUrl);
  photoElement.onerror=function(){this.src="https://via.placeholder.com/160x190";};
  if(!member.verify){
   console.error("Verify code missing:",member);
@@ -97,7 +107,6 @@ function generateQR(verifyCode){
  const verificationURL=new URL("verify.html",window.location.href);
  verificationURL.searchParams.set("verify",verifyCode);
  new QRCode(qrContainer,{text:verificationURL.href,width:120,height:120});
- console.log("QR verification URL:",verificationURL.href);
 }
 
 function openVerification(){
@@ -110,13 +119,13 @@ function openVerification(){
 async function downloadCard(){
  try{
   const card=document.getElementById("membershipCard");
-  const canvas=await html2canvas(card,{scale:3,useCORS:true});
+  const canvas=await html2canvas(card,{scale:3,useCORS:true,allowTaint:false});
   const imgData=canvas.toDataURL("image/png");
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF("landscape","mm","a4");
   pdf.addImage(imgData,"PNG",10,10,277,170);
   const id=document.getElementById("memberId").innerText;
-  pdf.save(id+".pdf");
+  pdf.save((id||"membership-card")+".pdf");
  }catch(err){console.error("PDF generation error:",err);alert("Unable to generate PDF.");}
 }
 </script>
