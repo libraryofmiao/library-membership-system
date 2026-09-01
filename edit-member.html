@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Member</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+body{background:#f5f5f5}.edit-wrap{max-width:1000px;margin:auto}.card{border:0;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08)}.section-title{font-weight:700;border-bottom:1px solid #eee;padding-bottom:8px;margin-bottom:18px}.readonly{background:#eee}.photo-preview{width:130px;height:160px;object-fit:cover;border-radius:10px;border:1px solid #ddd;background:#fff}.required:after{content:' *';color:#dc3545}.saving{pointer-events:none;opacity:.7}
+</style>
+</head>
+<body>
+<div class="container py-4 edit-wrap">
+<div class="d-flex justify-content-between align-items-center mb-3"><h2 class="mb-0">Edit Member</h2><button class="btn btn-secondary" onclick="history.back()">Back</button></div>
+<div class="card"><div class="card-body p-4">
+<div id="message"></div>
+<form id="editForm">
+<h5 class="section-title">Member Information</h5>
+<div class="row g-3">
+<div class="col-md-4"><label class="form-label">Member ID</label><input id="memberId" class="form-control readonly" readonly></div>
+<div class="col-md-4"><label class="form-label required">Full Name</label><input id="fullName" class="form-control" required></div>
+<div class="col-md-4"><label class="form-label">Guardian</label><input id="guardian" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Gender</label><select id="gender" class="form-select"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+<div class="col-md-4"><label class="form-label">Date of Birth</label><input id="dob" type="date" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Occupation</label><input id="occupation" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Mobile</label><input id="mobile" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Email</label><input id="email" type="email" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Membership Type</label><input id="membershipType" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Duration</label><input id="duration" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">ID Type</label><input id="idType" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">ID Number</label><input id="idNumber" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Status</label><select id="status" class="form-select"><option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Expired">Expired</option></select></div>
+<div class="col-12"><label class="form-label">Address</label><textarea id="address" class="form-control" rows="2"></textarea></div>
+<div class="col-md-4"><label class="form-label">District</label><input id="district" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">State</label><input id="state" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Pincode</label><input id="pincode" class="form-control"></div>
+</div>
+<h5 class="section-title mt-4">Photo</h5>
+<div class="row g-3 align-items-center">
+<div class="col-auto"><img id="photoPreview" class="photo-preview" alt="Member photo"></div>
+<div class="col-md-6"><label class="form-label">Replace Photo (optional)</label><input id="photo" type="file" class="form-control" accept="image/*"><small class="text-muted">Leave empty to keep the existing photo.</small></div>
+</div>
+<div class="d-flex gap-2 mt-4"><button id="saveBtn" class="btn btn-success" type="submit">Save Changes</button><button class="btn btn-secondary" type="button" onclick="history.back()">Cancel</button></div>
+</form></div></div></div>
+<script>
+if(sessionStorage.getItem("libraryLoggedIn")!=="yes"){window.location.href="login.html";}
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwu7yamVKdb7h9VWGGQ_eUHGpUJesvP4tinAEHAKLhc31tyeeE0yPdboF0AUwZJLjS/exec";
+const params=new URLSearchParams(location.search);const memberId=params.get("id");
+const fields=["memberId","fullName","guardian","gender","dob","occupation","mobile","email","membershipType","duration","idType","idNumber","status","address","district","state","pincode"];
+function $(id){return document.getElementById(id)}
+function escapeValue(v){return v==null?"":String(v)}
+function driveImageUrl(url){if(!url)return "";const value=String(url).trim();let m=value.match(/[?&]id=([A-Za-z0-9_-]+)/)||value.match(/\/d\/([A-Za-z0-9_-]+)/);return m?"https://drive.google.com/thumbnail?id="+m[1]+"&sz=w600":value}
+async function loadMember(){if(!memberId){show("Missing member ID.","danger");return;}try{const r=await fetch(SCRIPT_URL+"?action=getMember&memberId="+encodeURIComponent(memberId)+"&_="+Date.now(),{cache:"no-store"});const result=await r.json();if(result.status!=="success")throw new Error(result.message||"Member not found");const m=result.member||{};fields.forEach(function(f){if($(f))$(f).value=escapeValue(m[f]);});$("memberId").value=memberId;const photo=driveImageUrl(m.photoUrl);if(photo)$("photoPreview").src=photo;else $("photoPreview").style.visibility="hidden";}catch(e){show(e.message||"Unable to load member.","danger");$("editForm").style.display="none";}}
+function show(text,type){$("message").innerHTML='<div class="alert alert-'+type+'">'+text+'</div>';}
+$("photo").addEventListener("change",function(){const file=this.files[0];if(file)$("photoPreview").src=URL.createObjectURL(file);});
+$("editForm").addEventListener("submit",async function(e){e.preventDefault();const btn=$("saveBtn");btn.classList.add("saving");btn.textContent="Saving...";try{const data={action:"updateMember",memberId:memberId};fields.slice(1).forEach(function(f){data[f]=$(f).value;});const file=$("photo").files[0];if(file){if(file.size>5*1024*1024)throw new Error("Photo must be 5 MB or smaller.");data.photoBase64=await toBase64(file);data.photoName=file.name;data.photoMimeType=file.type||"image/jpeg";}const query=new URLSearchParams(data);const r=await fetch(SCRIPT_URL+"?"+query.toString(),{cache:"no-store"});const result=await r.json();if(result.status!=="success")throw new Error(result.message||"Update failed");show("Member updated successfully.","success");setTimeout(function(){location.href="dashboard.html";},800);}catch(err){show(err.message||"Update failed.","danger");btn.classList.remove("saving");btn.textContent="Save Changes";}});
+function toBase64(file){return new Promise(function(resolve,reject){const reader=new FileReader();reader.onload=function(){resolve(String(reader.result).split(",")[1]||"")};reader.onerror=reject;reader.readAsDataURL(file);});}
+loadMember();
+</script>
+</body>
+</html>
