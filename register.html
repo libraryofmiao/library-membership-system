@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,9 +8,7 @@
 
 <title>Member Verification</title>
 
-<link
-href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
 
@@ -78,11 +75,6 @@ Member Verification
 
 </div>
 
-
-<!-- =====================================
-     LOADING
-===================================== -->
-
 <div id="loading" class="text-center">
 
 <div class="spinner-border text-primary"></div>
@@ -93,11 +85,6 @@ Verifying Member...
 
 </div>
 
-
-<!-- =====================================
-     RESULT
-===================================== -->
-
 <div id="resultArea" style="display:none;">
 
 <div class="row">
@@ -107,11 +94,9 @@ Verifying Member...
 <img
 id="memberPhoto"
 class="member-photo"
-src="https://via.placeholder.com/180x220"
-alt="Member Photo">
+src="https://via.placeholder.com/180x220">
 
 </div>
-
 
 <div class="col-md-8">
 
@@ -119,24 +104,20 @@ alt="Member Photo">
 
 <hr>
 
-
 <p>
 <strong>Name:</strong>
 <span id="memberName"></span>
 </p>
-
 
 <p>
 <strong>Member ID:</strong>
 <span id="memberId"></span>
 </p>
 
-
 <p>
 <strong>Membership Type:</strong>
 <span id="memberType"></span>
 </p>
-
 
 <p>
 <strong>Status:</strong>
@@ -148,11 +129,6 @@ alt="Member Photo">
 </div>
 
 </div>
-
-
-<!-- =====================================
-     NOT FOUND
-===================================== -->
 
 <div id="notFound" style="display:none;">
 
@@ -174,7 +150,6 @@ The QR Code is invalid or the member does not exist.
 
 </div>
 
-
 <script>
 
 // =====================================
@@ -184,21 +159,8 @@ The QR Code is invalid or the member does not exist.
 const SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbwu7yamVKdb7h9VWGGQ_eUHGpUJesvP4tinAEHAKLhc31tyeEEeOyPdboF0AUwZJLjS/exec";
 
-
 // =====================================
-// GET VERIFY CODE FROM URL
-// =====================================
-//
-// NEW QR FORMAT:
-//
-// verify.htm?verify=aB7xQ2
-//
-// The old:
-//
-// verify.htm?id=SDLM-2026-0001
-//
-// is no longer used.
-//
+// GET MEMBER ID
 // =====================================
 
 const params =
@@ -206,255 +168,144 @@ new URLSearchParams(
 window.location.search
 );
 
-
-const verifyCode =
-params.get("verify");
-
+const memberId =
+params.get("id");
 
 // =====================================
-// START VERIFICATION
+// START VERIFY
 // =====================================
 
-if(
-!verifyCode
-){
+if(!memberId){
 
 document.getElementById(
 "loading"
-).style.display =
-"none";
+).style.display="none";
 
 document.getElementById(
 "notFound"
-).style.display =
-"block";
+).style.display="block";
+
+}else{
+
+verifyMember(memberId);
 
 }
-else{
-
-verifyMember(
-verifyCode
-);
-
-}
-
 
 // =====================================
 // VERIFY MEMBER
 // =====================================
-//
-// IMPORTANT:
-//
-// We send:
-//
-//     verify=xxxxxx
-//
-// NOT:
-//
-//     memberId=xxxxxx
-//
-// =====================================
 
-async function verifyMember(
-verifyCode
-){
+async function verifyMember(memberId){
 
 try{
 
 const response =
 await fetch(
-
 SCRIPT_URL +
-
-"?action=verifyMember&verify=" +
-
-encodeURIComponent(
-verifyCode
-)
-
+"?action=verifyMember&memberId=" +
+encodeURIComponent(memberId)
 );
-
 
 const result =
 await response.json();
 
-
-console.log(
-"Verification result:",
-result
-);
-
-
-// Hide loading
+console.log(result);
 
 document.getElementById(
 "loading"
-).style.display =
-"none";
+).style.display="none";
 
-
-// Invalid code
-
-if(
-result.valid !== true
-){
+if(result.valid !== true){
 
 document.getElementById(
 "notFound"
-).style.display =
-"block";
+).style.display="block";
 
 return;
 
 }
 
-
-// Valid member
-
-loadMemberData(
-result
-);
+loadMemberData(result);
 
 }
-
 catch(err){
 
-console.error(
-"Verification error:",
-err
-);
-
+console.error(err);
 
 document.getElementById(
 "loading"
-).style.display =
-"none";
-
+).style.display="none";
 
 document.getElementById(
 "notFound"
-).style.display =
-"block";
+).style.display="block";
 
 }
 
 }
-
 
 // =====================================
 // LOAD MEMBER DATA
 // =====================================
 
-function loadMemberData(
-result
-){
+function loadMemberData(result){
 
 document.getElementById(
 "resultArea"
-).style.display =
-"block";
-
-
-// =====================================
-// NAME
-// =====================================
+).style.display="block";
 
 document.getElementById(
 "memberName"
 ).innerText =
 result.fullName || "";
 
-
-// =====================================
-// MEMBER ID
-// =====================================
-//
-// Member ID is displayed after the
-// server has already authenticated the
-// random Verify code.
-//
-// The lookup itself is NOT done using
-// Member ID.
-//
-
 document.getElementById(
 "memberId"
 ).innerText =
 result.memberId || "";
-
-
-// =====================================
-// MEMBERSHIP TYPE
-// =====================================
 
 document.getElementById(
 "memberType"
 ).innerText =
 result.membershipType || "";
 
-
-// =====================================
-// STATUS
-// =====================================
+// Works with BOTH:
+// status: "Active"
+// memberStatus: "Active"
 
 const memberStatus =
 result.memberStatus ||
 result.status ||
 "";
 
-
 document.getElementById(
 "memberStatus"
 ).innerText =
 memberStatus;
 
-
-// =====================================
-// VERIFIED / INACTIVE MESSAGE
-// =====================================
-
 if(
-
-String(
-memberStatus
-)
+String(memberStatus)
 .trim()
 .toLowerCase()
-===
-"active"
-
+==="active"
 ){
 
 document.getElementById(
 "verifyStatus"
 ).innerHTML =
-
-'<span class="status-active">' +
-'✓ VERIFIED MEMBER' +
-'</span>';
+'<span class="status-active">✓ VERIFIED MEMBER</span>';
 
 }
-
 else{
 
 document.getElementById(
 "verifyStatus"
 ).innerHTML =
-
-'<span class="status-inactive">' +
-'✗ INACTIVE MEMBER' +
-'</span>';
+'<span class="status-inactive">✗ INACTIVE MEMBER</span>';
 
 }
 
-
-// =====================================
-// MEMBER PHOTO
-// =====================================
-
-if(
-result.photoUrl
-){
+if(result.photoUrl){
 
 document.getElementById(
 "memberPhoto"
@@ -468,6 +319,4 @@ result.photoUrl;
 </script>
 
 </body>
-
 </html>
-```
