@@ -17,6 +17,7 @@ export default {
     if (url.pathname === "/api/member" && request.method === "GET") return handleGetMember(request, env);
     if (url.pathname === "/api/member" && request.method === "DELETE") return handleDeleteMember(request, env);
     if (url.pathname === "/api/verify" && request.method === "GET") return handleVerify(request, env);
+    if (url.pathname === "/api/photo" && request.method === "GET") return handlePhoto(request, env);
     return new Response("Not Found", { status: 404, headers: corsHeaders(request) });
   }
 };
@@ -71,6 +72,52 @@ async function handleGetMember(request, env) {
     const r = records[0];
     return json({ success: true, member: { id: r.id, ...(r.fields || {}) } }, 200, request);
   } catch (e) { return json({ success: false, message: e?.message || "Unable to load member." }, 502, request); }
+}
+
+async function handlePhoto(request, env) {
+  const url = new URL(request.url);
+  const memberId = String(url.searchParams.get("memberId") || "").trim();
+  if (!memberId) return new Response("memberId is required", { status: 400, headers: corsHeaders(request) });
+  try {
+    const records = await findByField(env, "memberId", memberId);
+    if (!records.length) return new Response("Member not found", { status: 404, headers: corsHeaders(request) });
+    const raw = extractPhotoValue(records[0]?.fields?.photoUrl);
+    if (!raw) return new Response("Photo not found", { status: 404, headers: corsHeaders(request) });
+
+    if (/^https?:\/\//i.test(raw)) return Response.redirect(raw, 302);
+
+    let mime = "image/jpeg";
+    let base64 = raw;
+    const dataMatch = raw.match(/^data:(image\/[a-z0-9.+-]+);base64,(.*)$/is);
+    if (dataMatch) {
+      mime = dataMatch[1].toLowerCase();
+      base64 = dataMatch[2];
+    }
+    base64 = base64.replace(/\s/g, "");
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64) || base64.length < 20) {
+      return new Response("Invalid photo data", { status: 422, headers: corsHeaders(request) });
+    }
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const headers = corsHeaders(request);
+    headers["Content-Type"] = mime;
+    headers["Cache-Control"] = "public, max-age=3600";
+    return new Response(bytes, { status: 200, headers });
+  } catch (e) {
+    return new Response("Unable to load photo", { status: 502, headers: corsHeaders(request) });
+  }
+}
+
+function extractPhotoValue(value) {
+  if (!value) return "";
+  if (Array.isArray(value)) return extractPhotoValue(value[0]);
+  if (typeof value === "object") return extractPhotoValue(value.url || value.signedUrl || value.downloadUrl || value.path || value.data || "");
+  let v = String(value).trim();
+  if ((v[0] === "[" || v[0] === "{") && v.length < 2000000) {
+    try { return extractPhotoValue(JSON.parse(v)); } catch {}
+  }
+  return v;
 }
 
 async function handleDeleteMember(request, env) {
