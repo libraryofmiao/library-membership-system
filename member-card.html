@@ -24,7 +24,7 @@ body{background:#f5f5f5}.card-wrapper{max-width:920px;margin:auto}.member-card{w
   .card-wrapper>h2,.card-wrapper>.text-center{display:none!important}
   .member-card{display:block!important;box-sizing:border-box!important;width:85.60mm!important;height:53.98mm!important;min-height:53.98mm!important;margin:0!important;border:0.6mm solid #0d6efd!important;border-radius:2.2mm!important;overflow:hidden!important}
   .header{height:14mm!important;padding:1.5mm 2mm!important}
-  #libraryLogo{height:8.5mm!important;width:auto!important;margin:0 auto 0.7mm!important;padding:0.5mm!important}
+  #libraryLogo{height:8.5mm!important;width:auto!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;margin:0 auto 0.7mm!important;padding:0.5mm!important}
   .header h3{font-size:3.1mm!important;line-height:1.05!important;margin:0!important}
   .header p{font-size:2.1mm!important;line-height:1.1!important;margin:0!important}
   .body-section{height:34.4mm!important;padding:2.2mm 2.5mm 6mm!important}
@@ -151,7 +151,10 @@ async function downloadCard(){
   const exportCard=source.cloneNode(true);
   exportCard.classList.add("pdf-export-card");
   exportCard.removeAttribute("id");
-  exportCard.querySelectorAll("[id]").forEach(el=>el.removeAttribute("id"));
+  /* Keep the logo and QR IDs so their dedicated PDF sizing rules apply. */
+  exportCard.querySelectorAll("[id]").forEach(el=>{
+   if(el.id!=="libraryLogo"&&el.id!=="qrcode")el.removeAttribute("id");
+  });
   const host=document.createElement("div");
   host.style.cssText="position:fixed;left:-10000px;top:0;width:856px;height:540px;overflow:hidden;background:#fff;z-index:-1;";
   host.appendChild(exportCard);
