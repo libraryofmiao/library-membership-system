@@ -52,7 +52,7 @@ function renderMembers(ms){
 }
 
 function setupPhotoObserver(){
-  const images=[...document.querySelectorAll(".lazy-photo[data-src")];
+  const images=[...document.querySelectorAll(".lazy-photo[data-src]")];
   if(!images.length)return;
   if("IntersectionObserver" in window){
     photoObserver=new IntersectionObserver(entries=>{
