@@ -28,21 +28,18 @@ async function handleRegistration(request,env){
   const required=["fullName","gender","dob","address","mobile","membershipType"];
   const missing=required.filter(key=>!String(fields[key]??"").trim());
   if(missing.length)return json({success:false,message:`Missing required fields: ${missing.join(", ")}`},400,request);
-
-  // Membership ID is independent from NocoDB's internal record Id.
-  // NocoDB's internal Id may keep increasing after records are deleted and
-  // must never be used as the public membership number.
   let memberId;
-  try{memberId=await getNextMemberId(env)}
-  catch(e){return json({success:false,message:e?.message||"Unable to generate Membership ID."},502,request)}
-
-  fields.verify=generateVerify();fields.issueDate=new Date().toISOString().slice(0,10);fields.status="Active";fields.timestamp=new Date().toISOString();
+  try{memberId=await getNextMemberId(env)}catch(e){return json({success:false,message:e?.message||"Unable to generate Membership ID."},502,request)}
+  fields.verify=generateVerify();
+  fields.issueDate=new Date().toISOString().slice(0,10);
+  fields.status="Active";
+  fields.timestamp=new Date().toISOString();
   fields.memberId=memberId;
   const createResponse=await nocodbFetch(env,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify([{fields}])});
   if(!createResponse.ok)return forwardNocoDBError(createResponse,request);
   const created=await safeJson(createResponse);const recordId=getRecordId(created?.records?.[0]);
   if(recordId===undefined)return json({success:false,message:"NocoDB created the record but did not return its record ID."},502,request);
-  return json({success:true,memberId,verify:fields.verify,recordId},200,request)
+  return json({success:true,memberId,verify:fields.verify,photoKey:makePhotoKey(memberId,fields.verify,fields.photoUrl),recordId},200,request)
 }
 
 async function getNextMemberId(env){
@@ -55,8 +52,6 @@ async function getNextMemberId(env){
     const number=Number(match[1]);
     if(Number.isSafeInteger(number)&&number>maxNumber)maxNumber=number;
   }
-  // If the table is empty, start the membership sequence at SDLM0001.
-  // Deleted gaps are not reused while other membership records still exist.
   const nextNumber=maxNumber+1;
   if(!Number.isSafeInteger(nextNumber)||nextNumber>99999999)throw new Error("Membership ID sequence limit reached.");
   return `SDLM${String(nextNumber).padStart(4,"0")}`;
@@ -71,14 +66,14 @@ async function handleMembers(request,env){
 async function handleGetMember(request,env){
   const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim();
   if(!memberId)return json({success:false,message:"memberId is required."},400,request);
-  try{const r=await getRecordByMemberId(env,memberId);if(!r)return json({success:false,message:"Member not found."},404,request);const id=getRecordId(r);if(id===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);return json({success:true,member:{id,...(r.fields||{})}},200,request)}
+  try{const r=await getRecordByMemberId(env,memberId);if(!r)return json({success:false,message:"Member not found."},404,request);const id=getRecordId(r);if(id===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);return json({success:true,member:{id,...(r.fields||{}),photoKey:makePhotoKey(memberId,r?.fields?.verify,r?.fields?.photoUrl)}},200,request)}
   catch(e){return json({success:false,message:e?.message||"Unable to load member."},502,request)}
 }
 
 async function handleGetMemberBasic(request,env){
   const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim();
   if(!memberId)return json({success:false,message:"memberId is required."},400,request);
-  try{const r=await getRecordByMemberId(env,memberId);if(!r)return json({success:false,message:"Member not found."},404,request);const id=getRecordId(r);if(id===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);const fields={...(r.fields||{})};delete fields.photoUrl;return json({success:true,member:{id,...fields}},200,request)}
+  try{const r=await getRecordByMemberId(env,memberId);if(!r)return json({success:false,message:"Member not found."},404,request);const id=getRecordId(r);if(id===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);const fields={...(r.fields||{})};delete fields.photoUrl;return json({success:true,member:{id,...fields,photoKey:makePhotoKey(memberId,fields.verify,r?.fields?.photoUrl)}},200,request)}
   catch(e){return json({success:false,message:e?.message||"Unable to load member."},502,request)}
 }
 
@@ -97,23 +92,39 @@ async function handleUpdateMember(request,env){
     const payload=[{id:recordId,fields}];
     const response=await nocodbFetch(env,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     if(!response.ok)return forwardNocoDBError(response,request);
-    return json({success:true,message:`Member ${memberId} updated successfully.`},200,request)
+    const newPhotoKey=Object.prototype.hasOwnProperty.call(fields,"photoUrl")?makePhotoKey(memberId,record?.fields?.verify,fields.photoUrl):makePhotoKey(memberId,record?.fields?.verify,record?.fields?.photoUrl);
+    return json({success:true,message:`Member ${memberId} updated successfully.`,photoKey:newPhotoKey},200,request)
   }catch(e){return json({success:false,message:e?.message||"Update failed."},502,request)}
 }
 
 async function handlePhoto(request,env){
-  const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim();
+  const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim(),verify=String(url.searchParams.get("verify")||"").trim();
   if(!memberId)return new Response("memberId is required",{status:400,headers:corsHeaders(request)});
-  const cacheKey=new Request(`${url.origin}/api/photo?memberId=${encodeURIComponent(memberId)}`);const cached=await caches.default.match(cacheKey);if(cached)return cached;
   try{
     const record=await getRecordByMemberId(env,memberId);if(!record)return new Response("Member not found",{status:404,headers:corsHeaders(request)});
+    const recordVerify=String(record?.fields?.verify||"").trim();
+    if(verify&&verify!==recordVerify)return new Response("Photo version does not match member",{status:409,headers:corsHeaders(request)});
+    const photoKey=makePhotoKey(memberId,recordVerify,record?.fields?.photoUrl);
+    const cacheKey=new Request(`${url.origin}/api/photo?memberId=${encodeURIComponent(memberId)}&verify=${encodeURIComponent(recordVerify)}&photoKey=${encodeURIComponent(photoKey)}`);
+    const cached=await caches.default.match(cacheKey);if(cached)return cached;
     const raw=extractPhotoValue(record?.fields?.photoUrl);if(!raw)return new Response("Photo not found",{status:404,headers:corsHeaders(request)});
     if(/^https?:\/\//i.test(raw))return Response.redirect(raw,302);
     let mime="image/jpeg",base64=raw;const dataMatch=raw.match(/^data:(image\/[a-z0-9.+-]+);base64,(.*)$/is);if(dataMatch){mime=dataMatch[1].toLowerCase();base64=dataMatch[2]}
     base64=base64.replace(/\s/g,"");if(!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)||base64.length<20)return new Response("Invalid photo data",{status:422,headers:corsHeaders(request)});
     const binary=atob(base64),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
-    const headers=new Headers(corsHeaders(request));headers.set("Content-Type",mime);headers.set("Cache-Control","public, max-age=86400, immutable");const response=new Response(bytes,{status:200,headers});await caches.default.put(cacheKey,response.clone());return response
+    const headers=new Headers(corsHeaders(request));headers.set("Content-Type",mime);headers.set("Cache-Control","public, max-age=86400, immutable");headers.set("X-Photo-Key",photoKey);
+    const response=new Response(bytes,{status:200,headers});await caches.default.put(cacheKey,response.clone());return response
   }catch(e){return new Response("Unable to load photo",{status:502,headers:corsHeaders(request)})}
+}
+
+function makePhotoKey(memberId,verify,photoValue){
+  const id=String(memberId||"").trim(),code=String(verify||"").trim();
+  if(!id||!code)return id?`${id}-photo`:"photo";
+  const raw=extractPhotoValue(photoValue);
+  let extension="jpg";
+  const match=raw.match(/^data:(image\/[^;]+);base64,/i);
+  if(match){const subtype=match[1].split("/")[1].toLowerCase();extension=subtype==="jpeg"?"jpg":subtype.replace(/[^a-z0-9]/g,"")||"jpg"}
+  return `${id}-${code}.${extension}`;
 }
 
 function extractPhotoValue(value){if(!value)return"";if(Array.isArray(value))return extractPhotoValue(value[0]);if(typeof value==="object")return extractPhotoValue(value.url||value.signedUrl||value.downloadUrl||value.path||value.data||"");let v=String(value).trim();if((v[0]==="["||v[0]==="{")&&v.length<2000000){try{return extractPhotoValue(JSON.parse(v))}catch{}}return v}
@@ -130,7 +141,7 @@ async function handleDeleteMember(request,env){
 
 async function handleVerify(request,env){
   const url=new URL(request.url),verify=String(url.searchParams.get("verify")||"").trim();if(!verify||!/^[A-Za-z0-9]{6}$/.test(verify))return json({success:false,message:"Invalid verification code."},400,request);
-  try{const records=await findByField(env,"verify",verify);if(!records.length)return json({success:false,message:"Member not found. The QR code may be invalid."},404,request);const r=records[0];const id=getRecordId(r);if(id===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);return json({success:true,member:{id,...(r.fields||{})}},200,request)}
+  try{const records=await findByField(env,"verify",verify);if(!records.length)return json({success:false,message:"Member not found. The QR code may be invalid."},404,request);const r=records[0];const id=getRecordId(r);if(id===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);return json({success:true,member:{id,...(r.fields||{}),photoKey:makePhotoKey(r?.fields?.memberId,verify,r?.fields?.photoUrl)}},200,request)}
   catch(e){return json({success:false,message:e?.message||"Unable to verify member."},502,request)}
 }
 
