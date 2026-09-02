@@ -10,164 +10,52 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 body{background:#f5f5f5}.card-wrapper{max-width:920px;margin:auto}.member-card{width:850px;min-height:520px;background:#fff;border:3px solid #0d6efd;border-radius:15px;overflow:hidden;position:relative;margin:auto}.header{background:#0d6efd;color:#fff;text-align:center;padding:15px}.body-section{padding:20px 24px 85px}.photo{width:160px;height:190px;object-fit:cover;border:2px solid #ccc;border-radius:6px;background:#f8f9fa}.member-info{font-size:18px;line-height:2}.qr{text-align:center}.qr-box{display:flex;justify-content:center;align-items:center;min-height:130px}.footer{position:absolute;bottom:0;width:100%;text-align:center;background:#f1f1f1;padding:10px}.signatory{position:absolute;right:30px;bottom:70px;text-align:center;font-size:14px}.loading{opacity:.7}@media(max-width:900px){.member-card{width:100%;height:auto;min-height:0}.member-info{font-size:16px}.body-section{padding-bottom:100px}.signatory{position:static;text-align:right;margin:10px 25px 15px}.footer{position:static}}
-
-/* Library logo: matched to the Administrator Authentication logo styling without changing surrounding layout. */
 #libraryLogo{display:block;box-sizing:border-box;width:82px;height:82px;min-width:82px;min-height:82px;max-width:82px;max-height:82px;background:#fff;border-radius:50%;padding:3px;object-fit:cover;box-shadow:0 4px 10px rgba(0,0,0,.15);margin:0 auto 10px;flex-shrink:0}
-
-/* Print/export layout only. Screen presentation above remains unchanged. */
 @page{size:85.60mm 53.98mm;margin:0}
-@media print{
-  html,body{width:85.60mm!important;height:53.98mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
-  body>*{display:none!important}
-  body>.container{display:block!important;width:85.60mm!important;height:53.98mm!important;max-width:none!important;margin:0!important;padding:0!important}
-  .card-wrapper{width:85.60mm!important;height:53.98mm!important;max-width:none!important;margin:0!important}
-  .card-wrapper>h2,.card-wrapper>.text-center{display:none!important}
-  .member-card{display:block!important;box-sizing:border-box!important;width:85.60mm!important;height:53.98mm!important;min-height:53.98mm!important;margin:0!important;border:0.6mm solid #0d6efd!important;border-radius:2.2mm!important;overflow:hidden!important}
-  .header{height:14mm!important;padding:1.5mm 2mm!important}
-  #libraryLogo{height:8.5mm!important;width:auto!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;margin:0 auto 0.7mm!important;padding:0.5mm!important}
-  .header h3{font-size:3.1mm!important;line-height:1.05!important;margin:0!important}
-  .header p{font-size:2.1mm!important;line-height:1.1!important;margin:0!important}
-  .body-section{height:34.4mm!important;padding:2.2mm 2.5mm 6mm!important}
-  .body-section>.row{height:100%!important;margin-left:-1mm!important;margin-right:-1mm!important;--bs-gutter-y:0!important;--bs-gutter-x:2mm!important}
-  .body-section .col-md-3,.body-section .col-md-6{width:auto!important}
-  .body-section .col-md-3:first-child{flex:0 0 25%!important;max-width:25%!important}
-  .body-section .col-md-6{flex:0 0 50%!important;max-width:50%!important}
-  .body-section .col-md-3:last-child{flex:0 0 25%!important;max-width:25%!important}
-  .photo{width:17mm!important;height:21mm!important;border:0.35mm solid #ccc!important;border-radius:1mm!important}
-  .member-info{font-size:2.35mm!important;line-height:1.48!important;word-break:break-word!important}
-  .member-info strong{font-weight:700!important}
-  .qr-box{min-height:22mm!important;height:22mm!important}
-  #qrcode canvas,#qrcode img{width:17mm!important;height:17mm!important;max-width:17mm!important;max-height:17mm!important}
-  .qr p{font-size:1.9mm!important;line-height:1.1!important;margin-top:1mm!important}
-  .signatory{right:3mm!important;bottom:6mm!important;font-size:1.8mm!important;line-height:1.15!important}
-  .footer{height:4mm!important;padding:1mm!important;font-size:1.8mm!important;line-height:2mm!important}
-}
-
-/* Same compact card styling is applied to the off-screen PDF clone only. */
-.pdf-export-card{box-sizing:border-box!important;width:856px!important;height:540px!important;min-height:540px!important;margin:0!important;border:6px solid #0d6efd!important;border-radius:22px!important;overflow:hidden!important;background:#fff!important;position:relative!important}
-.pdf-export-card .header{height:140px!important;padding:15px 20px!important}
-.pdf-export-card #libraryLogo{height:85px!important;width:auto!important;margin:0 auto 7px!important;padding:5px!important}
-.pdf-export-card .header h3{font-size:31px!important;line-height:1.05!important;margin:0!important}
-.pdf-export-card .header p{font-size:21px!important;line-height:1.1!important;margin:0!important}
-.pdf-export-card .body-section{height:344px!important;padding:22px 25px 60px!important}
-.pdf-export-card .body-section>.row{height:100%!important;margin-left:-10px!important;margin-right:-10px!important;--bs-gutter-y:0!important;--bs-gutter-x:20px!important}
-.pdf-export-card .body-section .col-md-3:first-child{flex:0 0 25%!important;max-width:25%!important}
-.pdf-export-card .body-section .col-md-6{flex:0 0 50%!important;max-width:50%!important}
-.pdf-export-card .body-section .col-md-3:last-child{flex:0 0 25%!important;max-width:25%!important}
-.pdf-export-card .photo{width:170px!important;height:210px!important;border:3px solid #ccc!important;border-radius:10px!important}
-.pdf-export-card .member-info{font-size:23.5px!important;line-height:1.48!important;word-break:break-word!important}
-.pdf-export-card .qr-box{min-height:220px!important;height:220px!important}
-.pdf-export-card #qrcode canvas,.pdf-export-card #qrcode img{width:170px!important;height:170px!important;max-width:170px!important;max-height:170px!important}
-.pdf-export-card .qr p{font-size:19px!important;line-height:1.1!important;margin-top:10px!important}
-.pdf-export-card .signatory{right:30px!important;bottom:60px!important;font-size:18px!important;line-height:1.15!important}
-.pdf-export-card .footer{height:40px!important;padding:10px!important;font-size:18px!important;line-height:20px!important}
+@media print{html,body{width:85.60mm!important;height:53.98mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}body>*{display:none!important}body>.container{display:block!important;width:85.60mm!important;height:53.98mm!important;max-width:none!important;margin:0!important;padding:0!important}.card-wrapper{width:85.60mm!important;height:53.98mm!important;max-width:none!important;margin:0!important}.card-wrapper>h2,.card-wrapper>.text-center{display:none!important}.member-card{display:block!important;box-sizing:border-box!important;width:85.60mm!important;height:53.98mm!important;min-height:53.98mm!important;margin:0!important;border:0.6mm solid #0d6efd!important;border-radius:2.2mm!important;overflow:hidden!important}.header{height:14mm!important;padding:1.5mm 2mm!important}#libraryLogo{height:8.5mm!important;width:auto!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;margin:0 auto 0.7mm!important;padding:0.5mm!important}.header h3{font-size:3.1mm!important;line-height:1.05!important;margin:0!important}.header p{font-size:2.1mm!important;line-height:1.1!important;margin:0!important}.body-section{height:34.4mm!important;padding:2.2mm 2.5mm 6mm!important}.body-section>.row{height:100%!important;margin-left:-1mm!important;margin-right:-1mm!important;--bs-gutter-y:0!important;--bs-gutter-x:2mm!important}.body-section .col-md-3,.body-section .col-md-6{width:auto!important}.body-section .col-md-3:first-child{flex:0 0 25%!important;max-width:25%!important}.body-section .col-md-6{flex:0 0 50%!important;max-width:50%!important}.body-section .col-md-3:last-child{flex:0 0 25%!important;max-width:25%!important}.photo{width:17mm!important;height:21mm!important;border:0.35mm solid #ccc!important;border-radius:1mm!important}.member-info{font-size:2.35mm!important;line-height:1.48!important;word-break:break-word!important}.member-info strong{font-weight:700!important}.qr-box{min-height:22mm!important;height:22mm!important}#qrcode canvas,#qrcode img{width:17mm!important;height:17mm!important;max-width:17mm!important;max-height:17mm!important}.qr p{font-size:1.9mm!important;line-height:1.1!important;margin-top:1mm!important}.signatory{right:3mm!important;bottom:6mm!important;font-size:1.8mm!important;line-height:1.15!important}.footer{height:4mm!important;padding:1mm!important;font-size:1.8mm!important;line-height:2mm!important}}
+.pdf-export-card{box-sizing:border-box!important;width:856px!important;height:540px!important;min-height:540px!important;margin:0!important;border:6px solid #0d6efd!important;border-radius:22px!important;overflow:hidden!important;background:#fff!important;position:relative!important}.pdf-export-card .header{height:140px!important;padding:15px 20px!important}.pdf-export-card #libraryLogo{height:85px!important;width:auto!important;margin:0 auto 7px!important;padding:5px!important}.pdf-export-card .header h3{font-size:31px!important;line-height:1.05!important;margin:0!important}.pdf-export-card .header p{font-size:21px!important;line-height:1.1!important;margin:0!important}.pdf-export-card .body-section{height:344px!important;padding:22px 25px 60px!important}.pdf-export-card .body-section>.row{height:100%!important;margin-left:-10px!important;margin-right:-10px!important;--bs-gutter-y:0!important;--bs-gutter-x:20px!important}.pdf-export-card .body-section .col-md-3:first-child{flex:0 0 25%!important;max-width:25%!important}.pdf-export-card .body-section .col-md-6{flex:0 0 50%!important;max-width:50%!important}.pdf-export-card .body-section .col-md-3:last-child{flex:0 0 25%!important;max-width:25%!important}.pdf-export-card .photo{width:170px!important;height:210px!important;border:3px solid #ccc!important;border-radius:10px!important}.pdf-export-card .member-info{font-size:23.5px!important;line-height:1.48!important;word-break:break-word!important}.pdf-export-card .qr-box{min-height:220px!important;height:220px!important}.pdf-export-card #qrcode canvas,.pdf-export-card #qrcode img{width:170px!important;height:170px!important;max-width:170px!important;max-height:170px!important}.pdf-export-card .qr p{font-size:19px!important;line-height:1.1!important;margin-top:10px!important}.pdf-export-card .signatory{right:30px!important;bottom:60px!important;font-size:18px!important;line-height:1.15!important}.pdf-export-card .footer{height:40px!important;padding:10px!important;font-size:18px!important;line-height:20px!important}
 </style>
 </head>
 <body>
 <div class="container py-4"><div class="card-wrapper">
 <h2 class="text-center mb-3">Digital Membership Card</h2>
 <div id="membershipCard" class="member-card">
-<div class="header">
-<img id="libraryLogo" src="https://ik.imagekit.io/libraryofmiao/Login-Page-Logo/IMG-20260722-WA0000.jpg" alt="Library Logo" loading="eager" decoding="async" crossorigin="anonymous">
-<h3>Sub Divisional Library Miao</h3><p class="mb-0">Library Membership Card</p>
+<div class="header"><img id="libraryLogo" src="https://ik.imagekit.io/libraryofmiao/Login-Page-Logo/IMG-20260722-WA0000.jpg" alt="Library Logo" loading="eager" decoding="async" crossorigin="anonymous"><h3>Sub Divisional Library Miao</h3><p class="mb-0">Library Membership Card</p></div>
+<div class="body-section"><div class="row align-items-start g-3"><div class="col-md-3 text-center"><img id="memberPhoto" class="photo" loading="eager" decoding="async" src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27160%27 height=%27190%27%3E%3Crect width=%27160%27 height=%27190%27 fill=%27%23f8f9fa%27/%3E%3Ctext x=%2780%27 y=%2798%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-size=%2716%27 fill=%27%236c757d%27%3EPhoto%3C/text%3E%3C/svg%3E" alt="Member Photo"></div><div class="col-md-6"><div class="member-info"><strong>Name:</strong> <span id="memberName" class="loading">Loading...</span><br><strong>Member ID:</strong> <span id="memberId">Loading...</span><br><strong>Email:</strong> <span id="memberEmail">-</span><br><strong>Membership:</strong> <span id="memberType">-</span><br><strong>Issue Date:</strong> <span id="issueDate">-</span><br><strong>Status:</strong> <span id="membershipStatus">-</span></div></div><div class="col-md-3 qr"><div class="qr-box"><div id="qrcode"></div></div><p class="mt-2 mb-0">Scan Verification</p></div></div></div><div class="signatory">____________________<br>Authorized Signatory</div><div class="footer">Sub Divisional Library Miao</div>
 </div>
-<div class="body-section"><div class="row align-items-start g-3">
-<div class="col-md-3 text-center"><img id="memberPhoto" class="photo" loading="eager" decoding="async" src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27160%27 height=%27190%27%3E%3Crect width=%27160%27 height=%27190%27 fill=%27%23f8f9fa%27/%3E%3Ctext x=%2780%27 y=%2798%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-size=%2716%27 fill=%27%236c757d%27%3EPhoto%3C/text%3E%3C/svg%3E" alt="Member Photo"></div>
-<div class="col-md-6"><div class="member-info">
-<strong>Name:</strong> <span id="memberName" class="loading">Loading...</span><br>
-<strong>Member ID:</strong> <span id="memberId">Loading...</span><br>
-<strong>Email:</strong> <span id="memberEmail">-</span><br>
-<strong>Membership:</strong> <span id="memberType">-</span><br>
-<strong>Issue Date:</strong> <span id="issueDate">-</span><br>
-<strong>Status:</strong> <span id="membershipStatus">-</span>
-</div></div>
-<div class="col-md-3 qr"><div class="qr-box"><div id="qrcode"></div></div><p class="mt-2 mb-0">Scan Verification</p></div>
-</div></div>
-<div class="signatory">____________________<br>Authorized Signatory</div>
-<div class="footer">Sub Divisional Library Miao</div>
-</div>
-<div class="text-center mt-4">
-<button class="btn btn-primary" onclick="downloadCard()">Download PDF Card</button>
-<button class="btn btn-success ms-2" onclick="window.print()">Print Card</button>
-<button class="btn btn-info ms-2" onclick="openVerification()">Verify Member</button>
-</div>
+<div class="text-center mt-4"><button class="btn btn-primary" onclick="downloadCard()">Download PDF Card</button><button class="btn btn-success ms-2" onclick="window.print()">Print Card</button><button class="btn btn-info ms-2" onclick="openVerification()">Verify Member</button></div>
 </div></div>
 <script>
 const API_BASE=window.MEMBERSHIP_API_BASE||"https://library-membership-system.libraryofmiao.workers.dev/api";
 const FALLBACK="data:image/svg+xml;charset=UTF-8,"+encodeURIComponent("<svg xmlns=\"http://www.w3.org/2000/svg\" width=160 height=190><rect width=160 height=190 fill=\"#f8f9fa\"/><text x=80 y=98 text-anchor=\"middle\" font-family=\"Arial\" font-size=16 fill=\"#6c757d\">Photo</text></svg>");
 let currentVerifyCode="";
-const params=new URLSearchParams(window.location.search);
-const memberId=params.get("id")||params.get("memberId");
-if(!memberId){alert("Member ID missing in URL");}else{loadMember(memberId);}
-
-async function loadMember(id){
- try{
-  const response=await fetch(API_BASE+"/member-basic?memberId="+encodeURIComponent(id),{cache:"default"});
-  const result=await response.json();
-  if(!response.ok||!result.success||!result.member)throw new Error(result.message||"Member not found.");
-  fillCard(result.member,id);
-  loadPhoto(id,result.member.verify,result.member.photoKey);
- }catch(err){console.error(err);document.getElementById("memberName").innerText="Unable to load";alert("Unable to load member data.\n\n"+(err.message||err));}
-}
-
-async function loadPhoto(id,verify,photoKey){
- const photo=document.getElementById("memberPhoto");
- photo.src=FALLBACK;
- if(!verify)return;
- const urls=[];
- if(photoKey)urls.push(API_BASE+"/photo?photoKey="+encodeURIComponent(photoKey));
- urls.push(API_BASE+"/photo?memberId="+encodeURIComponent(id)+"&verify="+encodeURIComponent(verify));
- for(const photoUrl of urls){
-  try{
-   const response=await fetch(photoUrl,{cache:"force-cache"});
-   if(!response.ok)continue;
-   const blob=await response.blob();
-   if(!blob.type.startsWith("image/"))continue;
-   const objectUrl=URL.createObjectURL(blob);
-   photo.onload=()=>URL.revokeObjectURL(objectUrl);
-   photo.onerror=()=>URL.revokeObjectURL(objectUrl);
-   photo.src=objectUrl;
-   return;
-  }catch(err){console.warn("Photo attempt failed",err);}
- }
-}
-function fillCard(member,id){
- document.getElementById("memberName").innerText=member.fullName||"";
- document.getElementById("memberId").innerText=member.memberId||"";
- document.getElementById("memberEmail").innerText=member.email||"";
- document.getElementById("memberType").innerText=member.membershipType||"";
- document.getElementById("issueDate").innerText=member.issueDate||member.timestamp||"";
- document.getElementById("membershipStatus").innerText=member.status||member.memberStatus||"Active";
- currentVerifyCode=String(member.verify||"").trim();
- if(!currentVerifyCode){alert("Verification code is missing for this member.");return;}
- generateQR(currentVerifyCode);
-}
-
+const params=new URLSearchParams(window.location.search); const memberId=params.get("id")||params.get("memberId"); if(!memberId){alert("Member ID missing in URL");}else{loadMember(memberId);}
+async function loadMember(id){try{const response=await fetch(API_BASE+"/member-basic?memberId="+encodeURIComponent(id),{cache:"default"});const result=await response.json();if(!response.ok||!result.success||!result.member)throw new Error(result.message||"Member not found.");fillCard(result.member,id);loadPhoto(id,result.member.verify,result.member.photoKey);}catch(err){console.error(err);document.getElementById("memberName").innerText="Unable to load";alert("Unable to load member data.\n\n"+(err.message||err));}}
+async function loadPhoto(id,verify,photoKey){const photo=document.getElementById("memberPhoto");photo.src=FALLBACK;if(!verify)return;const urls=[];if(photoKey)urls.push(API_BASE+"/photo?photoKey="+encodeURIComponent(photoKey));urls.push(API_BASE+"/photo?memberId="+encodeURIComponent(id)+"&verify="+encodeURIComponent(verify));for(const photoUrl of urls){try{const response=await fetch(photoUrl,{cache:"force-cache"});if(!response.ok)continue;const blob=await response.blob();if(!blob.type.startsWith("image/"))continue;const objectUrl=URL.createObjectURL(blob);photo.onload=()=>URL.revokeObjectURL(objectUrl);photo.onerror=()=>URL.revokeObjectURL(objectUrl);photo.src=objectUrl;return;}catch(err){console.warn("Photo attempt failed",err);}}}
+function fillCard(member,id){document.getElementById("memberName").innerText=member.fullName||"";document.getElementById("memberId").innerText=member.memberId||"";document.getElementById("memberEmail").innerText=member.email||"";document.getElementById("memberType").innerText=member.membershipType||"";document.getElementById("issueDate").innerText=member.issueDate||member.timestamp||"";document.getElementById("membershipStatus").innerText=member.status||member.memberStatus||"Active";currentVerifyCode=String(member.verify||"").trim();if(!currentVerifyCode){alert("Verification code is missing for this member.");return;}generateQR(currentVerifyCode);}
 function generateQR(code){const box=document.getElementById("qrcode");box.innerHTML="";const verificationURL=new URL("verify.html",window.location.href);verificationURL.searchParams.set("verify",code);new QRCode(box,{text:verificationURL.href,width:120,height:120,correctLevel:QRCode.CorrectLevel.M});}
 function openVerification(){if(!currentVerifyCode){alert("Verification code is missing.");return;}const url=new URL("verify.html",window.location.href);url.searchParams.set("verify",currentVerifyCode);window.open(url.href,"_blank");}
+async function imageToDataURL(src){return new Promise((resolve,reject)=>{if(!src||src.startsWith("data:")){resolve(src);return;}const img=new Image();img.crossOrigin="anonymous";img.onload=()=>{try{const canvas=document.createElement("canvas");canvas.width=img.naturalWidth||img.width;canvas.height=img.naturalHeight||img.height;canvas.getContext("2d").drawImage(img,0,0);resolve(canvas.toDataURL("image/png"));}catch(err){reject(err);}};img.onerror=()=>reject(new Error("Unable to load image for PDF export"));img.src=src;});}
 async function downloadCard(){
  try{
   const source=document.getElementById("membershipCard");
-  const exportCard=source.cloneNode(true);
-  exportCard.classList.add("pdf-export-card");
-  exportCard.removeAttribute("id");
-  /* Keep the logo and QR IDs so their dedicated PDF sizing rules apply. */
-  exportCard.querySelectorAll("[id]").forEach(el=>{
-   if(el.id!=="libraryLogo"&&el.id!=="qrcode")el.removeAttribute("id");
-  });
-  const host=document.createElement("div");
-  host.style.cssText="position:fixed;left:-10000px;top:0;width:856px;height:540px;overflow:hidden;background:#fff;z-index:-1;";
-  host.appendChild(exportCard);
-  document.body.appendChild(host);
+  const exportCard=source.cloneNode(true);exportCard.classList.add("pdf-export-card");exportCard.removeAttribute("id");
+  exportCard.querySelectorAll("[id]").forEach(el=>{if(el.id!=="libraryLogo"&&el.id!=="qrcode"&&el.id!=="memberPhoto")el.removeAttribute("id");});
+  const sourcePhoto=document.getElementById("memberPhoto");
+  const exportPhoto=exportCard.querySelector("#memberPhoto");
+  if(sourcePhoto&&exportPhoto){try{exportPhoto.src=await imageToDataURL(sourcePhoto.src);}catch(err){exportPhoto.src=FALLBACK;console.warn("Member photo could not be embedded in PDF",err);}}
+  const sourceLogo=document.getElementById("libraryLogo");
+  const exportLogo=exportCard.querySelector("#libraryLogo");
+  if(sourceLogo&&exportLogo){try{exportLogo.src=await imageToDataURL(sourceLogo.src);}catch(err){exportLogo.remove();console.warn("Logo could not be embedded in PDF",err);}}
+  const exportQR=exportCard.querySelector("#qrcode");
+  if(exportQR&&currentVerifyCode){exportQR.innerHTML="";const verificationURL=new URL("verify.html",window.location.href);verificationURL.searchParams.set("verify",currentVerifyCode);new QRCode(exportQR,{text:verificationURL.href,width:170,height:170,correctLevel:QRCode.CorrectLevel.M});}
+  const host=document.createElement("div");host.style.cssText="position:fixed;left:-10000px;top:0;width:856px;height:540px;overflow:hidden;background:#fff;z-index:-1;";host.appendChild(exportCard);document.body.appendChild(host);
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-  const canvas=await html2canvas(exportCard,{scale:2,useCORS:true,allowTaint:false,backgroundColor:"#ffffff",width:856,height:540,windowWidth:856,windowHeight:540});
+  await Promise.all(Array.from(exportCard.querySelectorAll("img")).map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve;})));
+  const canvas=await html2canvas(exportCard,{scale:2,useCORS:true,allowTaint:false,backgroundColor:"#ffffff",width:856,height:540,windowWidth:856,windowHeight:540,imageTimeout:15000});
   host.remove();
-  const imgData=canvas.toDataURL("image/png");
-  const{jsPDF}=window.jspdf;
-  const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:[85.60,53.98]});
-  pdf.addImage(imgData,"PNG",0,0,85.60,53.98);
-  pdf.save((document.getElementById("memberId").innerText||"membership-card")+".pdf");
- }catch(err){console.error(err);alert("Unable to generate PDF.");}
+  const imgData=canvas.toDataURL("image/png");const{jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:[85.60,53.98]});pdf.addImage(imgData,"PNG",0,0,85.60,53.98);pdf.save((document.getElementById("memberId").innerText||"membership-card")+".pdf");
+ }catch(err){console.error(err);alert("Unable to generate PDF.\n\n"+(err.message||err));}
 }
 </script>
 </body>
