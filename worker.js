@@ -12,6 +12,7 @@ export default { async fetch(request, env) {
   if(url.pathname==="/api/member"&&request.method==="GET")return handleGetMember(request,env);
   if(url.pathname==="/api/member-basic"&&request.method==="GET")return handleGetMemberBasic(request,env);
   if(url.pathname==="/api/member"&&request.method==="PATCH")return handleUpdateMember(request,env);
+  if(url.pathname==="/api/member-status"&&request.method==="PATCH")return handleUpdateMemberStatus(request,env);
   if(url.pathname==="/api/member"&&request.method==="DELETE")return handleDeleteMember(request,env);
   if(url.pathname==="/api/verify"&&request.method==="GET")return handleVerify(request,env);
   if(url.pathname==="/api/photo"&&request.method==="GET")return handlePhoto(request,env);
@@ -98,6 +99,27 @@ async function handleGetMemberBasic(request,env){
   catch(e){return json({success:false,message:e?.message||"Unable to load member."},502,request)}
 }
 
+async function handleUpdateMemberStatus(request,env){
+  if(!env.NOCODB_TOKEN)return json({success:false,message:"Backend is not configured."},500,request);
+  let input;
+  try{input=await request.json()}catch{return json({success:false,message:"Invalid JSON request."},400,request)}
+  const memberId=String(input?.memberId||"").trim();
+  const requestedStatus=String(input?.status||"").trim();
+  if(!memberId)return json({success:false,message:"memberId is required."},400,request);
+  if(requestedStatus!=="Active"&&requestedStatus!=="Deactive")return json({success:false,message:"Status must be Active or Deactive."},400,request);
+  try{
+    const record=await getRecordByMemberId(env,memberId);
+    if(!record)return json({success:false,message:"Member not found."},404,request);
+    const rawRecordId=getRecordId(record);
+    if(rawRecordId===void 0)return json({success:false,message:"Member record ID could not be determined."},502,request);
+    const recordId=Number(rawRecordId);
+    if(!Number.isSafeInteger(recordId)||recordId<=0)return json({success:false,message:"Invalid NocoDB record ID."},502,request);
+    const response=await nocodbFetch(env,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify([{id:recordId,fields:{status:requestedStatus}}])});
+    if(!response.ok)return forwardNocoDBError(response,request);
+    return json({success:true,memberId,status:requestedStatus,message:`Member ${memberId} status changed to ${requestedStatus}. Verification code was not changed.`},200,request);
+  }catch(e){return json({success:false,message:e?.message||"Status update failed."},502,request)}
+}
+__name(handleUpdateMemberStatus,"handleUpdateMemberStatus");
 async function handleUpdateMember(request,env){
   if(!env.NOCODB_TOKEN)return json({success:false,message:"Backend is not configured."},500,request);
   const contentLength=Number(request.headers.get("content-length")||0);if(contentLength>MAX_BODY_BYTES)return json({success:false,message:"Update payload is too large."},413,request);
