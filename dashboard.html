@@ -5,7 +5,10 @@
 if(sessionStorage.getItem("libraryLoggedIn")!=="yes")location.href="login.html";
 const API_BASE=window.MEMBERSHIP_API_BASE||"https://library-membership-system.libraryofmiao.workers.dev/api";
 const PHOTO_PLACEHOLDER="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='58' height='58'%3E%3Crect width='100%25' height='100%25' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='52%25' dominant-baseline='middle' text-anchor='middle' font-size='10' fill='%236c757d'%3ENo Photo%3C/text%3E%3C/svg%3E";
+const MEMBERS_CACHE_KEY="sdlm.dashboard.members.v2";
 let allMembers=[];let photoObserver=null;let membersLoadedAt=0;
+function saveMembersCache(data){try{localStorage.setItem(MEMBERS_CACHE_KEY,JSON.stringify({savedAt:Date.now(),members:data.members||[],total:(data.stats||{}).total??(data.members||[]).length}))}catch{}}
+function readMembersCache(){try{const raw=localStorage.getItem(MEMBERS_CACHE_KEY);if(!raw)return null;const x=JSON.parse(raw);return Array.isArray(x.members)?x:null}catch{return null}}
 
 async function api(path,options={}){
   const requestOptions={...options};
@@ -18,14 +21,18 @@ async function api(path,options={}){
 async function loadDashboard(){await loadMembers()}
 
 async function loadMembers(force=false){
+  const now=Date.now();
+  if(!force&&allMembers.length&&now-membersLoadedAt<30000){renderMembers(allMembers);return}
+  if(!force){
+    const cached=readMembersCache();
+    if(cached){allMembers=cached.members;membersLoadedAt=cached.savedAt||now;document.getElementById("totalMembers").innerText=cached.total??allMembers.length;renderMembers(allMembers)}
+  }
   try{
-    const now=Date.now();
-    if(!force&&allMembers.length&&now-membersLoadedAt<30000){renderMembers(allMembers);return}
-    const x=await api("/members");
+    const x=await api("/members",{cache:"no-store"});
     allMembers=x.members||[];membersLoadedAt=Date.now();
     document.getElementById("totalMembers").innerText=(x.stats||{}).total??allMembers.length;
-    renderMembers(allMembers);
-  }catch(e){console.error(e);document.getElementById("memberTable").innerHTML='<tr><td colspan="9" class="text-center text-danger py-4">Unable to load member data</td></tr>';document.getElementById("totalMembers").innerText="0"}
+    saveMembersCache(x);renderMembers(allMembers);
+  }catch(e){console.error(e);if(!allMembers.length){document.getElementById("memberTable").innerHTML='<tr><td colspan="9" class="text-center text-danger py-4">Unable to load member data</td></tr>';document.getElementById("totalMembers").innerText="0"}}
 }
 
 function photoUrl(member){
@@ -65,9 +72,9 @@ function setupPhotoObserver(){
 
 document.getElementById("searchBox").addEventListener("input",function(){const k=this.value.toLowerCase().trim();renderMembers(allMembers.filter(m=>String(m.fullName||"").toLowerCase().includes(k)||String(m.memberId||"").toLowerCase().includes(k)||String(m.mobile||"").toLowerCase().includes(k)||String(m.email||"").toLowerCase().includes(k)))});
 
-async function toggleMemberStatus(memberId,currentStatus){if(!memberId)return;const nextStatus=String(currentStatus||"").toLowerCase()==="active"?"Inactive":"Active";if(!confirm("Change member "+memberId+" status to "+nextStatus+"?"))return;try{const x=await api("/member-status",{method:"PATCH",body:JSON.stringify({memberId,status:nextStatus})});if(!x.success)throw Error(x.message||"Status update failed");const member=allMembers.find(m=>String(m.memberId||"")===String(memberId));if(member)member.status=nextStatus;membersLoadedAt=Date.now();renderMembers(allMembers);alert(x.message||"Status updated successfully.");}catch(e){alert(e.message||"Status update failed.")}}
+async function toggleMemberStatus(memberId,currentStatus){if(!memberId)return;const nextStatus=String(currentStatus||"").toLowerCase()==="active"?"Inactive":"Active";if(!confirm("Change member "+memberId+" status to "+nextStatus+"?"))return;try{const x=await api("/member-status",{method:"PATCH",body:JSON.stringify({memberId,status:nextStatus})});if(!x.success)throw Error(x.message||"Status update failed");const member=allMembers.find(m=>String(m.memberId||"")===String(memberId));if(member)member.status=nextStatus;membersLoadedAt=Date.now();saveMembersCache({members:allMembers,stats:{total:allMembers.length}});renderMembers(allMembers);alert(x.message||"Status updated successfully.");}catch(e){alert(e.message||"Status update failed.")}}
 function editMember(memberId){if(!memberId)return;location.href="edit-member.html?id="+encodeURIComponent(memberId)}
-async function deleteMember(memberId){if(!confirm("Delete Member : "+memberId+" ?"))return;try{const x=await api("/member?memberId="+encodeURIComponent(memberId),{method:"DELETE"});alert(x.message||"Done");if(x.success){allMembers=allMembers.filter(m=>String(m.memberId||"")!==String(memberId));membersLoadedAt=Date.now();renderMembers(allMembers);document.getElementById("totalMembers").innerText=allMembers.length}}catch(e){alert(e.message||"Delete Failed")}}
+async function deleteMember(memberId){if(!confirm("Delete Member : "+memberId+" ?"))return;try{const x=await api("/member?memberId="+encodeURIComponent(memberId),{method:"DELETE"});alert(x.message||"Done");if(x.success){allMembers=allMembers.filter(m=>String(m.memberId||"")!==String(memberId));membersLoadedAt=Date.now();saveMembersCache({members:allMembers,stats:{total:allMembers.length}});renderMembers(allMembers);document.getElementById("totalMembers").innerText=allMembers.length}}catch(e){alert(e.message||"Delete Failed")}}
 function exportExcel(){let c="Member ID,Name,Mobile,Email,Membership Type\n";allMembers.forEach(m=>c+=`"${String(m.memberId||"").replace(/"/g,'""')}","${String(m.fullName||"").replace(/"/g,'""')}","${String(m.mobile||"").replace(/"/g,'""')}","${String(m.email||"").replace(/"/g,'""')}","${String(m.membershipType||"").replace(/"/g,'""')}"\n`);const b=new Blob([c],{type:"text/csv;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="LibraryMembers.csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function printMembers(){window.print()}
 function generateReport(){alert("Total Members : "+allMembers.length)}
