@@ -83,7 +83,6 @@ async function getNextMemberId(env){
 }
 
 function memberCacheKey(request){const url=new URL(request.url);return new Request(`${url.origin}/api/members`,{method:"GET"})}
-
 async function invalidateMembersCache(request){try{await caches.default.delete(memberCacheKey(request))}catch{}}
 
 async function handleMembers(request,env){
@@ -101,6 +100,8 @@ async function handleMembers(request,env){
     const payload={success:true,members,stats:{total:members.length}};
     const headers=new Headers(corsHeaders(request));
     headers.set("Content-Type","application/json; charset=utf-8");
+    headers.set("Access-Control-Allow-Origin","*");
+    headers.delete("Vary");
     headers.set("Cache-Control",`public, max-age=0, s-maxage=${MEMBERS_CACHE_TTL}, stale-while-revalidate=120`);
     const response=new Response(JSON.stringify(payload),{status:200,headers});
     await caches.default.put(cacheKey,response.clone());
@@ -183,12 +184,12 @@ async function handlePhoto(request,env){
     if(/^https?:\/\//i.test(raw)){
       const imageResponse=await fetch(raw,{cf:{cacheEverything:true,cacheTtl:86400}});
       if(!imageResponse.ok)return new Response("Photo not found",{status:imageResponse.status,headers:corsHeaders(request)});
-      const headers=new Headers(imageResponse.headers);headers.set("Cache-Control","public, max-age=86400, immutable");headers.set("X-Photo-Key",photoKey);const response=new Response(imageResponse.body,{status:200,headers});await caches.default.put(cacheKey,response.clone());return response;
+      const headers=new Headers(imageResponse.headers);headers.set("Cache-Control","public, max-age=86400, immutable");headers.set("Access-Control-Allow-Origin","*");headers.delete("Vary");headers.set("X-Photo-Key",photoKey);const response=new Response(imageResponse.body,{status:200,headers});await caches.default.put(cacheKey,response.clone());return response;
     }
     let mime="image/jpeg",base64=raw;const dataMatch=raw.match(/^data:(image\/[a-z0-9.+-]+);base64,(.*)$/is);if(dataMatch){mime=dataMatch[1].toLowerCase();base64=dataMatch[2]}
     base64=base64.replace(/\s/g,"");if(!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)||base64.length<20)return new Response("Invalid photo data",{status:422,headers:corsHeaders(request)});
     const binary=atob(base64),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
-    const headers=new Headers(corsHeaders(request));headers.set("Content-Type",mime);headers.set("Cache-Control","public, max-age=86400, immutable");headers.set("X-Photo-Key",photoKey);const response=new Response(bytes,{status:200,headers});await caches.default.put(cacheKey,response.clone());return response
+    const headers=new Headers(corsHeaders(request));headers.set("Content-Type",mime);headers.set("Cache-Control","public, max-age=86400, immutable");headers.set("Access-Control-Allow-Origin","*");headers.delete("Vary");headers.set("X-Photo-Key",photoKey);const response=new Response(bytes,{status:200,headers});await caches.default.put(cacheKey,response.clone());return response
   }catch(e){return new Response("Unable to load photo",{status:502,headers:corsHeaders(request)})}
 }
 
