@@ -29,9 +29,12 @@ async function loadMembers(force=false){
 }
 
 function photoUrl(member){
-  const id=String(member?.memberId||"").trim(),verify=String(member?.verify||"").trim();
+  const id=String(member?.memberId||"").trim(),verify=String(member?.verify||"").trim(),photoKey=String(member?.photoKey||"").trim();
   if(!id)return PHOTO_PLACEHOLDER;
-  return API_BASE+"/photo?memberId="+encodeURIComponent(id)+(verify?"&verify="+encodeURIComponent(verify):"");
+  let u=API_BASE+"/photo?memberId="+encodeURIComponent(id);
+  if(verify)u+="&verify="+encodeURIComponent(verify);
+  if(photoKey)u+="&photoKey="+encodeURIComponent(photoKey);
+  return u;
 }
 
 function escapeHtml(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;")}
@@ -49,7 +52,7 @@ function renderMembers(ms){
 }
 
 function setupPhotoObserver(){
-  const images=[...document.querySelectorAll(".lazy-photo[data-src]")];
+  const images=[...document.querySelectorAll(".lazy-photo[data-src")];
   if(!images.length)return;
   if("IntersectionObserver" in window){
     photoObserver=new IntersectionObserver(entries=>{
