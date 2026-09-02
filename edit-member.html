@@ -1,1 +1,77 @@
-FILE_CONTENT_PLACEHOLDER
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Member</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>body{background:#f5f5f5}.edit-wrap{max-width:1000px;margin:auto}.card{border:0;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08)}.section-title{font-weight:700;border-bottom:1px solid #eee;padding-bottom:8px;margin-bottom:18px}.readonly{background:#eee}.photo-preview{width:130px;height:160px;object-fit:cover;border-radius:10px;border:1px solid #ddd;background:#fff}.required:after{content:' *';color:#dc3545}.saving{pointer-events:none;opacity:.7}</style>
+<style>.option-manager-buttons{z-index:1040}.modal-backdrop-custom{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:1055}.option-manager-modal{width:min(560px,100%);max-height:85vh;overflow:auto;background:#fff;border-radius:12px;padding:24px;box-shadow:0 10px 35px rgba(0,0,0,.2)}.option-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;cursor:grab;padding:4px;border-radius:6px}.option-row:active{cursor:grabbing}.option-row.dragging{opacity:.55}.option-drag{flex:0 0 auto;cursor:grab;font-size:1.1rem;user-select:none}.option-row input{flex:1}.option-delete{flex:0 0 auto}@media(max-width:767px){.option-manager-buttons{position:static!important;justify-content:center;margin-top:12px;flex-wrap:wrap}.option-manager-buttons .btn{font-size:.8rem}}</style></head><body>
+<div class="container py-4 edit-wrap"><div class="d-flex justify-content-between align-items-center mb-3"><h2 class="mb-0">Edit Member</h2><button class="btn btn-secondary" onclick="history.back()">Back</button></div>
+<div class="card"><div class="card-body p-4"><div class="option-manager-buttons position-fixed bottom-0 end-0 d-flex flex-wrap justify-content-end gap-2 p-3" style="z-index:1040;"><button type="button" class="btn btn-primary btn-sm shadow-sm" id="manageMembershipTypeBtn" tabindex="-1">Edit Membership</button><button type="button" class="btn btn-primary btn-sm shadow-sm" id="manageIdTypeBtn" tabindex="-1">Edit ID</button><button type="button" class="btn btn-outline-secondary btn-sm shadow-sm" id="exitEditBtn" tabindex="-1">&#x21AA; Exit</button></div><div id="message"></div><form id="editForm">
+<h5 class="section-title">Member Information</h5><div class="row g-3">
+<div class="col-md-4"><label class="form-label">Member ID</label><input id="memberId" class="form-control readonly" readonly></div>
+<div class="col-md-4"><label class="form-label required">Full Name</label><input id="fullName" class="form-control" required></div>
+<div class="col-md-4"><label class="form-label">Guardian</label><input id="guardian" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Gender</label><select id="gender" class="form-select"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+<div class="col-md-4"><label class="form-label">Date of Birth</label><input id="dob" type="date" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Occupation</label><input id="occupation" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Mobile</label><input id="mobile" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Email</label><input id="email" type="email" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Membership Type</label><select id="membershipType" class="form-select"><option value="">Select</option></select></div>
+<div class="col-md-4"><label class="form-label">Duration</label><select id="duration" class="form-select"><option value="">Select</option><option>Permanent ( Paid )</option><option>Permanent ( Free of Cost )</option><option>New Age Learning Centre</option></select></div>
+<div class="col-md-4"><label class="form-label">ID Type</label><select id="idType" class="form-select"><option value="">Select</option></select></div>
+<div class="col-md-4"><label class="form-label">ID Number</label><input id="idNumber" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Status</label><select id="status" class="form-select"><option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Expired">Expired</option></select></div>
+<div class="col-12"><label class="form-label">Address</label><textarea id="address" class="form-control" rows="2"></textarea></div>
+<div class="col-md-4"><label class="form-label">District</label><input id="district" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">State</label><input id="state" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Pincode</label><input id="pincode" class="form-control"></div></div>
+<h5 class="section-title mt-4">Photo</h5><div class="row g-3 align-items-center"><div class="col-auto"><img id="photoPreview" class="photo-preview" alt="Member photo"></div><div class="col-md-6"><label class="form-label">Replace Photo (optional)</label><input id="photo" type="file" class="form-control" accept="image/*"><small class="text-muted">Leave empty to keep the existing photo.</small></div></div>
+<div class="d-flex gap-2 mt-4"><button id="saveBtn" class="btn btn-success" type="submit">Save Changes</button><button class="btn btn-secondary" type="button" onclick="history.back()">Cancel</button></div>
+</form></div></div></div>
+<div class="modal-backdrop-custom" id="optionManagerModal" style="display:none" aria-hidden="true">
+<div class="option-manager-modal" role="dialog" aria-modal="true" aria-labelledby="optionManagerTitle">
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h5 class="mb-0" id="optionManagerTitle">Manage Options</h5>
+<button type="button" class="btn-close" id="closeOptionManager" aria-label="Close"></button>
+</div>
+<div id="optionManagerList"></div>
+<div class="border-top pt-3 mt-3">
+<label class="form-label fw-semibold" for="newOptionValue">Add New Option</label>
+<div class="input-group">
+<input type="text" class="form-control" id="newOptionValue" maxlength="100" placeholder="Enter new option">
+<button type="button" class="btn btn-primary" id="addOptionBtn">Add</button>
+</div>
+</div>
+<div class="d-flex justify-content-end gap-2 mt-4">
+<button type="button" class="btn btn-secondary" id="cancelOptionManager">Cancel</button>
+<button type="button" class="btn btn-primary" id="saveOptionManager">Save Changes</button>
+</div>
+</div>
+</div>
+<script>
+if(sessionStorage.getItem("libraryLoggedIn")!=="yes")location.href="login.html";
+const API_BASE=window.MEMBERSHIP_API_BASE||"https://library-membership-system.libraryofmiao.workers.dev/api";
+const memberId=new URLSearchParams(location.search).get("id");
+const fields=["memberId","fullName","guardian","gender","dob","occupation","mobile","email","membershipType","duration","idType","idNumber","status","address","district","state","pincode"];
+const editableFields=fields.slice(1);const $=id=>document.getElementById(id);function show(t,c){$("message").innerHTML='<div class="alert alert-'+c+'">'+t+'</div>'}
+const DEFAULT_MEMBERSHIP_TYPES=["Student","General","Senior Citizen","Research Scholar","Faculty","NALC"];
+const DEFAULT_ID_TYPES=["Aadhaar Card","Voter ID","PAN Card","Driving License","Govt. ID"];
+let membershipTypes=[...DEFAULT_MEMBERSHIP_TYPES],idTypes=[...DEFAULT_ID_TYPES];
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
+function populateSelect(id,options,current){const select=$(id);select.innerHTML='<option value="">Select</option>'+options.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join("");if(current!=null&&current!==""){if(!options.includes(String(current))){const opt=document.createElement("option");opt.value=String(current);opt.textContent=String(current);opt.dataset.legacy="true";select.appendChild(opt);}select.value=String(current);}}
+async function loadOptions(){try{const x=await api("/options");if(Array.isArray(x.membershipTypes)&&x.membershipTypes.length)membershipTypes=[...x.membershipTypes];if(Array.isArray(x.idTypes)&&x.idTypes.length)idTypes=[...x.idTypes];}catch(e){console.warn("Using default edit options:",e.message||e);}}
+let activeOptionKey="",workingOptions=[];
+const optionModal=$("optionManagerModal"),optionList=$("optionManagerList"),optionTitle=$("optionManagerTitle"),newOptionValue=$("newOptionValue");
+function renderOptionManager(){optionList.innerHTML="";workingOptions.forEach((value,index)=>{const row=document.createElement("div");row.className="option-row";row.draggable=true;row.dataset.index=index;row.innerHTML='<span class="option-drag">↕</span><input type="text" class="form-control option-edit" value="'+escapeHtml(value)+'" maxlength="100" data-index="'+index+'"><span class="text-muted small option-number">'+(index+1)+'</span><button type="button" class="btn btn-outline-danger btn-sm option-delete" data-index="'+index+'">Delete</button>';optionList.appendChild(row);});optionList.querySelectorAll(".option-delete").forEach(btn=>btn.addEventListener("click",()=>{const i=Number(btn.dataset.index);if(workingOptions.length<=1)return alert("At least one option must remain.");if(confirm('Delete option "'+workingOptions[i]+'"? Existing member records will not be changed.')){workingOptions.splice(i,1);renderOptionManager();}}));let dragged=null;optionList.querySelectorAll(".option-row").forEach(row=>{row.addEventListener("dragstart",()=>{dragged=Number(row.dataset.index);row.classList.add("dragging")});row.addEventListener("dragend",()=>{row.classList.remove("dragging");dragged=null});row.addEventListener("dragover",e=>e.preventDefault());row.addEventListener("drop",e=>{e.preventDefault();const target=Number(row.dataset.index);if(dragged===null||dragged===target)return;const moved=workingOptions.splice(dragged,1)[0];workingOptions.splice(target,0,moved);renderOptionManager();});});}
+function openOptionManager(key){activeOptionKey=key;workingOptions=[...(key==="membershipType"?membershipTypes:idTypes)];optionTitle.textContent=key==="membershipType"?"Manage Membership Types":"Manage ID Proof Types";newOptionValue.value="";renderOptionManager();optionModal.style.display="flex";optionModal.setAttribute("aria-hidden","false");setTimeout(()=>newOptionValue.focus(),50);}
+function closeOptionManager(){optionModal.style.display="none";optionModal.setAttribute("aria-hidden","true");activeOptionKey="";workingOptions=[];}
+$("manageMembershipTypeBtn").addEventListener("click",()=>openOptionManager("membershipType"));$("manageIdTypeBtn").addEventListener("click",()=>openOptionManager("idType"));$("closeOptionManager").addEventListener("click",closeOptionManager);$("cancelOptionManager").addEventListener("click",closeOptionManager);$("exitEditBtn").addEventListener("click",()=>location.href="index.html");
+$("addOptionBtn").addEventListener("click",()=>{const v=newOptionValue.value.trim();if(!v)return;if(workingOptions.some(x=>x.toLowerCase()===v.toLowerCase()))return alert("This option already exists.");workingOptions.push(v);newOptionValue.value="";renderOptionManager();newOptionValue.focus();});newOptionValue.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("addOptionBtn").click();}});
+$("saveOptionManager").addEventListener("click",async()=>{const edited=[...optionList.querySelectorAll(".option-edit")].map(i=>i.value.trim());if(!edited.length||edited.some(v=>!v))return alert("Option names cannot be empty.");if(new Set(edited.map(v=>v.toLowerCase())).size!==edited.length)return alert("Option names must be unique.");const key=activeOptionKey;const adminKey=prompt("Enter the option management key to save this change globally:");if(adminKey===null)return;if(!adminKey)return alert("Option management key is required.");const nextMembership=key==="membershipType"?edited:membershipTypes;const nextId=key==="idType"?edited:idTypes;const b=$("saveOptionManager");b.disabled=true;b.textContent="Saving...";try{const res=await fetch(API_BASE+"/options",{method:"POST",headers:{"Content-Type":"application/json","X-Option-Admin-Key":adminKey},body:JSON.stringify({membershipTypes:nextMembership,idTypes:nextId})});const x=await res.json().catch(()=>({}));if(!res.ok||!x.success)throw Error(x.message||"Unable to save options globally.");membershipTypes=[...x.membershipTypes];idTypes=[...x.idTypes];closeOptionManager();await loadMember();alert("Options saved successfully.");}catch(err){alert(err.message||"Unable to save options globally.");}finally{b.disabled=false;b.textContent="Save Changes";}});optionModal.addEventListener("click",e=>{if(e.target===optionModal)closeOptionManager();});
+async function loadMember(){if(!memberId){show("Missing member ID.","danger");return}try{const x=await api("/member?memberId="+encodeURIComponent(memberId));const m=x.member||{};fields.forEach(f=>{if(f!=="membershipType"&&f!=="idType")$(f).value=m[f]==null?"":m[f]});populateSelect("membershipType",membershipTypes,m.membershipType);populateSelect("idType",idTypes,m.idType);$("memberId").value=memberId;$("photoPreview").src=API_BASE+"/photo?memberId="+encodeURIComponent(memberId)+"&_="+Date.now()}catch(e){show(e.message||"Unable to load member.","danger");$("editForm").style.display="none"}}
+$("photo").addEventListener("change",function(){if(this.files[0])$("photoPreview").src=URL.createObjectURL(this.files[0])});
+function optimizePhoto(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=reject;reader.onload=()=>{const img=new Image();img.onerror=reject;img.onload=()=>{const maxW=600,maxH=750,scale=Math.min(1,maxW/img.width,maxH/img.height),canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL("image/webp",.82))};img.src=reader.result};reader.readAsDataURL(file)})}
+$("editForm").addEventListener("submit",async function(e){e.preventDefault();const b=$("saveBtn");b.disabled=true;b.textContent="Saving...";try{const d={memberId};editableFields.forEach(f=>d[f]=$(f).value);const f=$("photo").files[0];if(f){if(f.size>5*1024*1024)throw Error("Photo must be 5 MB or smaller.");d.photoUrl=await optimizePhoto(f)}const x=await api("/member",{method:"PATCH",body:JSON.stringify(d)});show(x.message||"Member updated successfully.","success");setTimeout(()=>location.href="dashboard.html",800)}catch(e){show(e.message||"Update failed.","danger");b.disabled=false;b.textContent="Save Changes"}});
+(async()=>{await loadOptions();await loadMember()})();
+</script></body></html>
