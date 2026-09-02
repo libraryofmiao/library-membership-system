@@ -55,7 +55,6 @@ async function handlePhoto(request, env) {
   const memberId = String(url.searchParams.get("memberId") || "").trim();
   const verify = String(url.searchParams.get("verify") || "").trim();
   const requestedKey = String(url.searchParams.get("photoKey") || "").trim();
-  if (!memberId) return new Response("memberId is required", { status: 400, headers: corsHeaders(request) });
   try {
     // Fast path: dashboard/member-card supplies the immutable R2 key, so avoid a NocoDB lookup.
     if (env.MEMBER_PHOTOS && requestedKey && /^[A-Za-z0-9_-]{1,120}\.(?:jpg|jpeg|png|webp|avif|gif)$/i.test(requestedKey)) {
@@ -63,6 +62,7 @@ async function handlePhoto(request, env) {
       const r2 = await env.MEMBER_PHOTOS.get(fastKey);
       if (r2) return cachedR2Response(r2, requestedKey, new Request(url.origin + "/api/photo?photoKey=" + encodeURIComponent(requestedKey)));
     }
+    if (!memberId) return new Response("memberId is required", { status: 400, headers: corsHeaders(request) });
     const record = await getRecordByMemberId(env, memberId);
     if (!record) return new Response("Member not found", { status: 404, headers: corsHeaders(request) });
     const recordVerify = String(record?.fields?.verify || "").trim();
