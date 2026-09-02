@@ -1,3 +1,5 @@
+const __name = (target, value) => Object.defineProperty(target, "name", { value, configurable: true });
+
 const NOCODB_BASE = "https://app.nocodb.com/api/v3/data/pjqnbrcq6h8tuig/my00qyl601nwq3i/records";
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
 const MEMBERS_CACHE_TTL = 60;
