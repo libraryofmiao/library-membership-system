@@ -22,7 +22,7 @@ body{background:#f5f5f5}.card-wrapper{max-width:920px;margin:auto}.member-card{w
 <h3>Sub Divisional Library Miao</h3><p class="mb-0">Library Membership Card</p>
 </div>
 <div class="body-section"><div class="row align-items-start g-3">
-<div class="col-md-3 text-center"><img id="memberPhoto" class="photo" loading="eager" decoding="async" src="https://via.placeholder.com/160x190?text=Photo" alt="Member Photo"></div>
+<div class="col-md-3 text-center"><img id="memberPhoto" class="photo" loading="eager" decoding="async" src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27160%27 height=%27190%27%3E%3Crect width=%27160%27 height=%27190%27 fill=%27%23f8f9fa%27/%3E%3Ctext x=%2780%27 y=%2798%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-size=%2716%27 fill=%27%236c757d%27%3EPhoto%3C/text%3E%3C/svg%3E" alt="Member Photo"></div>
 <div class="col-md-6"><div class="member-info">
 <strong>Name:</strong> <span id="memberName" class="loading">Loading...</span><br>
 <strong>Member ID:</strong> <span id="memberId">Loading...</span><br>
@@ -62,21 +62,25 @@ async function loadMember(id){
 
 async function loadPhoto(id,verify,photoKey){
  const photo=document.getElementById("memberPhoto");
- if(!verify){photo.src=FALLBACK;return;}
- try{
-  const qs=photoKey?"photoKey="+encodeURIComponent(photoKey):"memberId="+encodeURIComponent(id)+"&verify="+encodeURIComponent(verify);
-  const photoUrl=API_BASE+"/photo?"+qs;
-  const response=await fetch(photoUrl,{cache:"force-cache"});
-  if(!response.ok)throw new Error("Photo unavailable");
-  const blob=await response.blob();
-  if(!blob.type.startsWith("image/"))throw new Error("Invalid image");
-  const objectUrl=URL.createObjectURL(blob);
-  photo.onload=()=>{URL.revokeObjectURL(objectUrl);};
-  photo.onerror=()=>{URL.revokeObjectURL(objectUrl);photo.src=FALLBACK;};
-  photo.src=objectUrl;
- }catch(err){console.warn("Photo load failed",err);photo.src=FALLBACK;}
+ photo.src=FALLBACK;
+ if(!verify)return;
+ const urls=[];
+ if(photoKey)urls.push(API_BASE+"/photo?photoKey="+encodeURIComponent(photoKey));
+ urls.push(API_BASE+"/photo?memberId="+encodeURIComponent(id)+"&verify="+encodeURIComponent(verify));
+ for(const photoUrl of urls){
+  try{
+   const response=await fetch(photoUrl,{cache:"force-cache"});
+   if(!response.ok)continue;
+   const blob=await response.blob();
+   if(!blob.type.startsWith("image/"))continue;
+   const objectUrl=URL.createObjectURL(blob);
+   photo.onload=()=>URL.revokeObjectURL(objectUrl);
+   photo.onerror=()=>URL.revokeObjectURL(objectUrl);
+   photo.src=objectUrl;
+   return;
+  }catch(err){console.warn("Photo attempt failed",err);}
+ }
 }
-
 function fillCard(member,id){
  document.getElementById("memberName").innerText=member.fullName||"";
  document.getElementById("memberId").innerText=member.memberId||"";
