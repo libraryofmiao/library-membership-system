@@ -29,12 +29,12 @@ async function handleRegistration(request,env){
   const missing=required.filter(key=>!String(fields[key]??"").trim());
   if(missing.length)return json({success:false,message:`Missing required fields: ${missing.join(", ")}`},400,request);
   fields.verify=generateVerify();fields.issueDate=new Date().toISOString().slice(0,10);fields.status="Active";fields.timestamp=new Date().toISOString();
-  const createResponse=await nocodbFetch(env,{method:"POST",body:JSON.stringify([{fields}])});
+  const createResponse=await nocodbFetch(env,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify([{fields}])});
   if(!createResponse.ok)return forwardNocoDBError(createResponse,request);
   const created=await safeJson(createResponse);const recordId=getRecordId(created?.records?.[0]);
   if(recordId===undefined)return json({success:false,message:"NocoDB created the record but did not return its record ID."},502,request);
   const memberId=`SDLM${String(recordId).padStart(4,"0")}`;
-  const updateResponse=await nocodbFetch(env,{method:"PATCH",body:JSON.stringify([{id:Number(recordId),fields:{memberId}}])});
+  const updateResponse=await nocodbFetch(env,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify([{id:Number(recordId),fields:{memberId}}])});
   if(!updateResponse.ok)return json({success:false,message:"Member record was created, but assigning the Membership ID failed.",verify:fields.verify,recordId},502,request);
   return json({success:true,memberId,verify:fields.verify,recordId},200,request)
 }
@@ -123,7 +123,7 @@ async function getAllRecords(env){
 
 async function findByField(env,field,value){const records=await getAllRecords(env);const wanted=String(value);return records.filter(record=>String(record?.fields?.[field]??"").trim()===wanted)}
 async function nocodbFetch(env,options){return nocoRequest(NOCODB_BASE,env,options)}
-async function nocoRequest(url,env,options={}){const maxAttempts=3;let response;for(let attempt=0;attempt<maxAttempts;attempt++){response=await fetch(url,{...options,headers:{...(options.headers||{}),"xc-token":env.NOCODB_TOKEN,"Accept":"application/json"}});if(response.status!==429||attempt===maxAttempts-1)return response;const retryAfter=Number(response.headers.get("Retry-After")||"");const delay=Number.isFinite(retryAfter)&&retryAfter>0?Math.min(retryAfter*1000,5000):500*(attempt+1);await new Promise(resolve=>setTimeout(resolve,delay))}return response}
+async function nocoRequest(url,env,options={}){const maxAttempts=3;let response;for(let attempt=0;attempt<maxAttempts;attempt++){const headers={...(options.headers||{}),"xc-token":env.NOCODB_TOKEN,"Accept":"application/json"};if(options.body!==undefined&&!headers["Content-Type"])headers["Content-Type"]="application/json";response=await fetch(url,{...options,headers});if(response.status!==429||attempt===maxAttempts-1)return response;const retryAfter=Number(response.headers.get("Retry-After")||"");const delay=Number.isFinite(retryAfter)&&retryAfter>0?Math.min(retryAfter*1000,5000):500*(attempt+1);await new Promise(resolve=>setTimeout(resolve,delay))}return response}
 async function forwardNocoDBError(response,request){const data=await safeJson(response);return json({success:false,message:data?.message||data?.msg||"NocoDB rejected the request.",error:data},response.status||502,request)}
 function getRecordId(record){if(!record)return undefined;const candidates=[record.id,record.id_fields?.Id,record.fields?.Id,record.Id,record.recordId,record.rowId];for(const value of candidates){if(typeof value==="string"&&value.trim()!=="")return value.trim();if(typeof value==="number"&&Number.isFinite(value)&&value>=0)return value}return undefined}
 function generateVerify(){const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",bytes=new Uint8Array(6);crypto.getRandomValues(bytes);let result="";for(let i=0;i<bytes.length;i++)result+=chars[bytes[i]%chars.length];return result}
