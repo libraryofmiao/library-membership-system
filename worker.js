@@ -1,5 +1,6 @@
 const NOCODB_BASE = "https://app.nocodb.com/api/v3/data/pjqnbrcq6h8tuig/my00qyl601nwq3i/records";
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
+const MEMBERS_CACHE_TTL = 60;
 const ALLOWED_FIELDS = ["fullName","guardian","gender","dob","occupation","address","district","state","pincode","mobile","email","membershipType","duration","idType","idNumber","issueDate","status","photoUrl","timestamp","verify"];
 
 export default { async fetch(request, env) {
@@ -18,7 +19,6 @@ export default { async fetch(request, env) {
   if(url.pathname==="/api/photo"&&request.method==="GET")return handlePhoto(request,env);
   return new Response("Not Found",{status:404,headers:corsHeaders(request)});
 } };
-
 
 async function handleOptions(request,env){
   if(!env.GITHUB_TOKEN||!env.OPTIONS_ADMIN_KEY)return json({success:false,message:"Option management is not configured on the server."},503,request);
@@ -72,6 +72,7 @@ async function handleRegistration(request,env){
   if(!createResponse.ok)return forwardNocoDBError(createResponse,request);
   const created=await safeJson(createResponse);const recordId=getRecordId(created?.records?.[0]);
   if(recordId===undefined)return json({success:false,message:"NocoDB created the record but did not return its record ID."},502,request);
+  await invalidateMembersCache(request);
   return json({success:true,memberId,verify:fields.verify,photoKey:makePhotoKey(memberId,fields.verify,fields.photoUrl),recordId},200,request)
 }
 
@@ -81,10 +82,30 @@ async function getNextMemberId(env){
   const nextNumber=maxNumber+1;if(!Number.isSafeInteger(nextNumber)||nextNumber>99999999)throw new Error("Membership ID sequence limit reached.");return `SDLM${String(nextNumber).padStart(4,"0")}`;
 }
 
+function memberCacheKey(request){const url=new URL(request.url);return new Request(`${url.origin}/api/members`,{method:"GET"})}
+
+async function invalidateMembersCache(request){try{await caches.default.delete(memberCacheKey(request))}catch{}}
+
 async function handleMembers(request,env){
   if(!env.NOCODB_TOKEN)return json({success:false,message:"Backend is not configured."},500,request);
-  try{const data=await getAllRecords(env);const members=data.map(r=>({id:getRecordId(r),...(r.fields||{}),photoKey:makePhotoKey(r?.fields?.memberId,r?.fields?.verify,r?.fields?.photoUrl)}));return json({success:true,members,stats:{total:members.length}},200,request)}
-  catch(e){return json({success:false,message:e?.message||"Unable to load member data."},502,request)}
+  const cacheKey=memberCacheKey(request);
+  const cached=await caches.default.match(cacheKey);
+  if(cached)return cached;
+  try{
+    const data=await getAllRecords(env);
+    const members=data.map(r=>{
+      const f=r.fields||{};
+      const memberId=String(f.memberId||"");
+      return {id:getRecordId(r),memberId,fullName:f.fullName||"",mobile:f.mobile||"",email:f.email||"",membershipType:f.membershipType||"",status:f.status||"Inactive",verify:f.verify||"",photoKey:makePhotoKey(memberId,f.verify,f.photoUrl)};
+    });
+    const payload={success:true,members,stats:{total:members.length}};
+    const headers=new Headers(corsHeaders(request));
+    headers.set("Content-Type","application/json; charset=utf-8");
+    headers.set("Cache-Control",`public, max-age=0, s-maxage=${MEMBERS_CACHE_TTL}, stale-while-revalidate=120`);
+    const response=new Response(JSON.stringify(payload),{status:200,headers});
+    await caches.default.put(cacheKey,response.clone());
+    return response;
+  }catch(e){return json({success:false,message:e?.message||"Unable to load member data."},502,request)}
 }
 
 async function handleGetMember(request,env){
@@ -116,10 +137,12 @@ async function handleUpdateMemberStatus(request,env){
     if(!Number.isSafeInteger(recordId)||recordId<=0)return json({success:false,message:"Invalid NocoDB record ID."},502,request);
     const response=await nocodbFetch(env,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify([{id:recordId,fields:{status:requestedStatus}}])});
     if(!response.ok)return forwardNocoDBError(response,request);
+    await invalidateMembersCache(request);
     return json({success:true,memberId,status:requestedStatus,message:`Member ${memberId} status changed to ${requestedStatus}. Verification code was not changed.`},200,request);
   }catch(e){return json({success:false,message:e?.message||"Status update failed."},502,request)}
 }
 __name(handleUpdateMemberStatus,"handleUpdateMemberStatus");
+
 async function handleUpdateMember(request,env){
   if(!env.NOCODB_TOKEN)return json({success:false,message:"Backend is not configured."},500,request);
   const contentLength=Number(request.headers.get("content-length")||0);if(contentLength>MAX_BODY_BYTES)return json({success:false,message:"Update payload is too large."},413,request);
@@ -139,6 +162,7 @@ async function handleUpdateMember(request,env){
     const payload=[{id:recordId,fields}];
     const response=await nocodbFetch(env,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     if(!response.ok)return forwardNocoDBError(response,request);
+    await invalidateMembersCache(request);
     const photoValue=Object.prototype.hasOwnProperty.call(fields,"photoUrl")?fields.photoUrl:record?.fields?.photoUrl;
     const photoKey=makePhotoKey(memberId,newVerify,photoValue);
     return json({success:true,message:`Member ${memberId} updated successfully. New verification code generated and old photo version invalidated.`,verify:newVerify,oldVerify,photoKey},200,request)
@@ -146,7 +170,8 @@ async function handleUpdateMember(request,env){
 }
 
 async function handlePhoto(request,env){
-  const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim(),verify=String(url.searchParams.get("verify")||"").trim();if(!memberId)return new Response("memberId is required",{status:400,headers:corsHeaders(request)});
+  const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim(),verify=String(url.searchParams.get("verify")||"").trim();
+  if(!memberId)return new Response("memberId is required",{status:400,headers:corsHeaders(request)});
   try{
     const record=await getRecordByMemberId(env,memberId);if(!record)return new Response("Member not found",{status:404,headers:corsHeaders(request)});
     const recordVerify=String(record?.fields?.verify||"").trim();
@@ -155,7 +180,11 @@ async function handlePhoto(request,env){
     const cacheKey=new Request(`${url.origin}/api/photo?memberId=${encodeURIComponent(memberId)}&verify=${encodeURIComponent(recordVerify)}&photoKey=${encodeURIComponent(photoKey)}`);
     const cached=await caches.default.match(cacheKey);if(cached)return cached;
     const raw=extractPhotoValue(record?.fields?.photoUrl);if(!raw)return new Response("Photo not found",{status:404,headers:corsHeaders(request)});
-    if(/^https?:\/\//i.test(raw))return Response.redirect(raw,302);
+    if(/^https?:\/\//i.test(raw)){
+      const imageResponse=await fetch(raw,{cf:{cacheEverything:true,cacheTtl:86400}});
+      if(!imageResponse.ok)return new Response("Photo not found",{status:imageResponse.status,headers:corsHeaders(request)});
+      const headers=new Headers(imageResponse.headers);headers.set("Cache-Control","public, max-age=86400, immutable");headers.set("X-Photo-Key",photoKey);const response=new Response(imageResponse.body,{status:200,headers});await caches.default.put(cacheKey,response.clone());return response;
+    }
     let mime="image/jpeg",base64=raw;const dataMatch=raw.match(/^data:(image\/[a-z0-9.+-]+);base64,(.*)$/is);if(dataMatch){mime=dataMatch[1].toLowerCase();base64=dataMatch[2]}
     base64=base64.replace(/\s/g,"");if(!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)||base64.length<20)return new Response("Invalid photo data",{status:422,headers:corsHeaders(request)});
     const binary=atob(base64),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
@@ -166,7 +195,7 @@ async function handlePhoto(request,env){
 function makePhotoKey(memberId,verify,photoValue){const id=String(memberId||"").trim(),code=String(verify||"").trim();if(!id||!code)return id?`${id}-photo`:"photo";const raw=extractPhotoValue(photoValue);let extension="jpg";const match=raw.match(/^data:(image\/[^;]+);base64,/i);if(match){const subtype=match[1].split("/")[1].toLowerCase();extension=subtype==="jpeg"?"jpg":subtype.replace(/[^a-z0-9]/g,"")||"jpg"}return `${id}-${code}.${extension}`}
 function extractPhotoValue(value){if(!value)return"";if(Array.isArray(value))return extractPhotoValue(value[0]);if(typeof value==="object")return extractPhotoValue(value.url||value.signedUrl||value.downloadUrl||value.path||value.data||"");let v=String(value).trim();if((v[0]==="["||v[0]==="{")&&v.length<2000000){try{return extractPhotoValue(JSON.parse(v))}catch{}}return v}
 
-async function handleDeleteMember(request,env){const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim();if(!memberId)return json({success:false,message:"memberId is required."},400,request);try{const record=await getRecordByMemberId(env,memberId);if(!record)return json({success:false,message:"Member not found."},404,request);const recordId=getRecordId(record);if(recordId===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);const response=await nocodbFetch(env,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify([{id:Number(recordId)}])});if(!response.ok)return forwardNocoDBError(response,request);return json({success:true,message:`Member ${memberId} deleted successfully.`},200,request)}catch(e){return json({success:false,message:e?.message||"Delete failed."},502,request)}}
+async function handleDeleteMember(request,env){const url=new URL(request.url),memberId=String(url.searchParams.get("memberId")||"").trim();if(!memberId)return json({success:false,message:"memberId is required."},400,request);try{const record=await getRecordByMemberId(env,memberId);if(!record)return json({success:false,message:"Member not found."},404,request);const recordId=getRecordId(record);if(recordId===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);const response=await nocodbFetch(env,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify([{id:Number(recordId)}])});if(!response.ok)return forwardNocoDBError(response,request);await invalidateMembersCache(request);return json({success:true,message:`Member ${memberId} deleted successfully.`},200,request)}catch(e){return json({success:false,message:e?.message||"Delete failed."},502,request)}}
 
 async function handleVerify(request,env){const url=new URL(request.url),verify=String(url.searchParams.get("verify")||"").trim();if(!verify||!/^[A-Za-z0-9]{6}$/.test(verify))return json({success:false,message:"Invalid verification code."},400,request);try{const records=await findByField(env,"verify",verify);if(!records.length)return json({success:false,message:"Member not found. The QR code may be invalid."},404,request);const r=records[0];const id=getRecordId(r);if(id===undefined)return json({success:false,message:"Member record ID could not be determined."},502,request);return json({success:true,member:{id,...(r.fields||{}),photoKey:makePhotoKey(r?.fields?.memberId,verify,r?.fields?.photoUrl)}},200,request)}catch(e){return json({success:false,message:e?.message||"Unable to verify member."},502,request)}}
 
