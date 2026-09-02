@@ -52,11 +52,12 @@
 <script>
 if(sessionStorage.getItem("libraryLoggedIn")!=="yes")location.href="login.html";
 const API_BASE=window.MEMBERSHIP_API_BASE||"https://library-membership-system.libraryofmiao.workers.dev/api";
+async function api(path,options={}){const response=await fetch(API_BASE+path,{...options,headers:{"Content-Type":"application/json",...(options.headers||{})}});const data=await response.json().catch(()=>({}));if(!response.ok||data.success===false)throw new Error(data.message||`Request failed (${response.status})`);return data;}
 const memberId=new URLSearchParams(location.search).get("id");
 const fields=["memberId","fullName","guardian","gender","dob","occupation","mobile","email","membershipType","duration","idType","idNumber","status","address","district","state","pincode"];
 const editableFields=fields.slice(1);const $=id=>document.getElementById(id);function show(t,c){$("message").innerHTML='<div class="alert alert-'+c+'">'+t+'</div>'}
 const DEFAULT_MEMBERSHIP_TYPES=["Student","General","Senior Citizen","Research Scholar","Faculty","NALC"];
-const DEFAULT_ID_TYPES=["Aadhaar Card","Voter ID","PAN Card","Driving License","Govt. ID"];
+const DEFAULT_ID_TYPES=["Aadhaar Card","Voter ID","PAN Card","Driving License","Passport","Govt. ID"];
 let membershipTypes=[...DEFAULT_MEMBERSHIP_TYPES],idTypes=[...DEFAULT_ID_TYPES];
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
 function populateSelect(id,options,current){const select=$(id);select.innerHTML='<option value="">Select</option>'+options.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join("");if(current!=null&&current!==""){if(!options.includes(String(current))){const opt=document.createElement("option");opt.value=String(current);opt.textContent=String(current);opt.dataset.legacy="true";select.appendChild(opt);}select.value=String(current);}}
