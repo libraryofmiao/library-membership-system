@@ -68,14 +68,15 @@ function loadMemberData(member){
  const status=member.memberStatus||member.status||"";
  document.getElementById("memberStatus").innerText=status;
  document.getElementById("verifyStatus").innerHTML=String(status).trim().toLowerCase()==="active"?'<span class="status-active">✓ VERIFIED MEMBER</span>':'<span class="status-inactive">✗ INACTIVE MEMBER</span>';
- loadPhoto(member.memberId);
+ loadPhoto(member.memberId,member.verify||verifyCode);
 }
 
-async function loadPhoto(memberId){
+async function loadPhoto(memberId,verify){
  const photo=document.getElementById("memberPhoto");
- if(!memberId){photo.src=FALLBACK;return;}
+ if(!memberId||!verify){photo.src=FALLBACK;return;}
  try{
-  const response=await fetch(API_BASE+"/photo?memberId="+encodeURIComponent(memberId),{method:"GET",cache:"force-cache"});
+  const photoUrl=API_BASE+"/photo?memberId="+encodeURIComponent(memberId)+"&verify="+encodeURIComponent(verify)+"&_="+Date.now();
+  const response=await fetch(photoUrl,{method:"GET",cache:"no-store"});
   if(!response.ok)throw new Error("Photo unavailable");
   const blob=await response.blob();
   if(!blob.type.startsWith("image/"))throw new Error("Invalid image response");
