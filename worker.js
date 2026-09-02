@@ -1,6 +1,6 @@
 const NOCODB_BASE = "https://app.nocodb.com/api/v3/data/pjqnbrcq6h8tuig/my00qyl601nwq3i/records";
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
-const ALLOWED_FIELDS = ["fullName","guardian","gender","dob","occupation","address","district","state","pincode","mobile","email","membershipType","duration","idType","idNumber","issueDate","status","photoUrl","timestamp"];
+const ALLOWED_FIELDS = ["fullName","guardian","gender","dob","occupation","address","district","state","pincode","mobile","email","membershipType","duration","idType","idNumber","issueDate","status","photoUrl","timestamp","verify"];
 
 export default { async fetch(request, env) {
   const url=new URL(request.url);
