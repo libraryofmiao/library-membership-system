@@ -46,7 +46,7 @@ body{background:#f4f6f9}.form-container{background:#fff;border-radius:12px;paddi
 </form>
 </div></div>
 <script>
-const API_URL=window.MEMBERSHIP_API_URL||"/api/register";
+const API_URL=window.MEMBERSHIP_API_URL||"https://library-membership-system.libraryofmiao.workers.dev/api/register";
 const photoInput=document.getElementById("photo"),previewBox=document.getElementById("previewBox");
 let optimizedPhoto="";
 photoInput.addEventListener("change",async function(){const file=this.files[0];optimizedPhoto="";if(!file){previewBox.innerHTML="<span>Preview</span>";return}try{optimizedPhoto=await optimizePhoto(file);previewBox.innerHTML=`<img src="${optimizedPhoto}" alt="Photo">`;}catch(e){console.error(e);alert("Unable to process the photograph.");}});
