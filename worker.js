@@ -28,15 +28,38 @@ async function handleRegistration(request,env){
   const required=["fullName","gender","dob","address","mobile","membershipType"];
   const missing=required.filter(key=>!String(fields[key]??"").trim());
   if(missing.length)return json({success:false,message:`Missing required fields: ${missing.join(", ")}`},400,request);
+
+  // Membership ID is independent from NocoDB's internal record Id.
+  // NocoDB's internal Id may keep increasing after records are deleted and
+  // must never be used as the public membership number.
+  let memberId;
+  try{memberId=await getNextMemberId(env)}
+  catch(e){return json({success:false,message:e?.message||"Unable to generate Membership ID."},502,request)}
+
   fields.verify=generateVerify();fields.issueDate=new Date().toISOString().slice(0,10);fields.status="Active";fields.timestamp=new Date().toISOString();
+  fields.memberId=memberId;
   const createResponse=await nocodbFetch(env,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify([{fields}])});
   if(!createResponse.ok)return forwardNocoDBError(createResponse,request);
   const created=await safeJson(createResponse);const recordId=getRecordId(created?.records?.[0]);
   if(recordId===undefined)return json({success:false,message:"NocoDB created the record but did not return its record ID."},502,request);
-  const memberId=`SDLM${String(recordId).padStart(4,"0")}`;
-  const updateResponse=await nocodbFetch(env,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify([{id:Number(recordId),fields:{memberId}}])});
-  if(!updateResponse.ok)return json({success:false,message:"Member record was created, but assigning the Membership ID failed.",verify:fields.verify,recordId},502,request);
   return json({success:true,memberId,verify:fields.verify,recordId},200,request)
+}
+
+async function getNextMemberId(env){
+  const records=await getAllRecords(env);
+  let maxNumber=0;
+  for(const record of records){
+    const value=String(record?.fields?.memberId??"").trim();
+    const match=value.match(/^SDLM(\d+)$/i);
+    if(!match)continue;
+    const number=Number(match[1]);
+    if(Number.isSafeInteger(number)&&number>maxNumber)maxNumber=number;
+  }
+  // If the table is empty, start the membership sequence at SDLM0001.
+  // Deleted gaps are not reused while other membership records still exist.
+  const nextNumber=maxNumber+1;
+  if(!Number.isSafeInteger(nextNumber)||nextNumber>99999999)throw new Error("Membership ID sequence limit reached.");
+  return `SDLM${String(nextNumber).padStart(4,"0")}`;
 }
 
 async function handleMembers(request,env){
