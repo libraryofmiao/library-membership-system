@@ -56,14 +56,15 @@ async function loadMember(id){
   const result=await response.json();
   if(!response.ok||!result.success||!result.member)throw new Error(result.message||"Member not found.");
   fillCard(result.member,id);
-  loadPhoto(id);
+  loadPhoto(id,currentVerifyCode);
  }catch(err){console.error(err);document.getElementById("memberName").innerText="Unable to load";alert("Unable to load member data.\n\n"+(err.message||err));}
 }
 
-async function loadPhoto(id){
+async function loadPhoto(id,verifyCode){
  const photo=document.getElementById("memberPhoto");
  try{
-  const response=await fetch(API_BASE+"/photo?memberId="+encodeURIComponent(id),{cache:"force-cache"});
+  const query="?memberId="+encodeURIComponent(id)+"&verify="+encodeURIComponent(String(verifyCode||""));
+  const response=await fetch(API_BASE+"/photo"+query,{cache:"force-cache"});
   if(!response.ok)throw new Error("Photo unavailable");
   const blob=await response.blob();
   if(!blob.type.startsWith("image/"))throw new Error("Invalid image");
