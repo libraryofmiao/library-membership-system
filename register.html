@@ -86,10 +86,11 @@ const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"appli
 });
 const DEFAULT_MEMBERSHIP_TYPES=["Student","General","Senior Citizen","Research Scholar","Faculty"];
 const DEFAULT_ID_TYPES=["Aadhaar Card","Voter ID","PAN Card","Driving License","Passport","Govt. ID"];
-const OPTION_STORAGE={membershipType:"sdlm_membership_types",idType:"sdlm_id_types"};
+let MEMBERSHIP_TYPES=[...DEFAULT_MEMBERSHIP_TYPES];
+let ID_TYPES=[...DEFAULT_ID_TYPES];
 let activeOptionKey="",workingOptions=[];
 const optionModal=document.getElementById("optionManagerModal"),optionList=document.getElementById("optionManagerList"),optionTitle=document.getElementById("optionManagerTitle"),newOptionValue=document.getElementById("newOptionValue");
-function getManagedOptions(key,defaults){try{const saved=JSON.parse(localStorage.getItem(OPTION_STORAGE[key])||"null");if(Array.isArray(saved)&&saved.length)return saved.map(String).map(v=>v.trim()).filter(Boolean);}catch(e){}return [...defaults];}
+function getManagedOptions(key,defaults){return key==="membershipType"?MEMBERSHIP_TYPES:ID_TYPES;}
 function refreshDropdown(selectId,options){const select=document.getElementById(selectId),current=select.value;select.innerHTML="<option value=\"\">Select</option>"+options.map(v=>`<option>${escapeHtml(v)}</option>`).join("");if(options.includes(current))select.value=current;}
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
 function renderOptionManager(){optionList.innerHTML="";workingOptions.forEach((value,index)=>{const row=document.createElement("div");row.className="option-row";row.innerHTML=`<input type="text" class="form-control option-edit" value="${escapeHtml(value)}" maxlength="100" data-index="${index}"><span class="text-muted small">${index+1}</span>`;optionList.appendChild(row);});}
@@ -101,7 +102,7 @@ document.getElementById("closeOptionManager").addEventListener("click",closeOpti
 document.getElementById("cancelOptionManager").addEventListener("click",closeOptionManager);
 document.getElementById("addOptionBtn").addEventListener("click",()=>{const value=newOptionValue.value.trim();if(!value)return;if(workingOptions.some(v=>v.toLowerCase()===value.toLowerCase())){alert("This option already exists.");return;}workingOptions.push(value);newOptionValue.value="";renderOptionManager();newOptionValue.focus();});
 newOptionValue.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();document.getElementById("addOptionBtn").click();}});
-document.getElementById("saveOptionManager").addEventListener("click",()=>{const edited=[...optionList.querySelectorAll(".option-edit")].map(i=>i.value.trim());if(edited.some(v=>!v)){alert("Option names cannot be empty.");return;}const unique=new Set(edited.map(v=>v.toLowerCase()));if(unique.size!==edited.length){alert("Option names must be unique.");return;}workingOptions=edited;localStorage.setItem(OPTION_STORAGE[activeOptionKey],JSON.stringify(workingOptions));refreshDropdown(activeOptionKey,workingOptions);closeOptionManager();});
+document.getElementById("saveOptionManager").addEventListener("click",()=>{const edited=[...optionList.querySelectorAll(".option-edit")].map(i=>i.value.trim());if(edited.some(v=>!v)){alert("Option names cannot be empty.");return;}const unique=new Set(edited.map(v=>v.toLowerCase()));if(unique.size!==edited.length){alert("Option names must be unique.");return;}workingOptions=edited;if(activeOptionKey==="membershipType")MEMBERSHIP_TYPES=[...workingOptions];else ID_TYPES=[...workingOptions];refreshDropdown(activeOptionKey,workingOptions);closeOptionManager();});
 optionModal.addEventListener("click",e=>{if(e.target===optionModal)closeOptionManager();});
 function loadManagedDropdowns(){refreshDropdown("membershipType",getManagedOptions("membershipType",DEFAULT_MEMBERSHIP_TYPES));refreshDropdown("idType",getManagedOptions("idType",DEFAULT_ID_TYPES));}
 loadManagedDropdowns();
