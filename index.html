@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
+<body class="d-flex flex-column min-vh-100">
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
 <div class="container">
@@ -21,6 +21,7 @@
 </div>
 </nav>
 
+<main class="flex-grow-1">
 <section class="hero text-center py-5">
 <div class="container">
 
@@ -79,9 +80,10 @@ Members
 </div>
 
 </section>
+</main>
 
-<footer class="bg-dark text-white text-center py-3">
-© 2026 Library Membership System
+<footer class="bg-dark text-white text-center py-3 mt-auto">
+© 2026 Library Membership System - Sub Divisional Library Miao
 </footer>
 
 <script>function logout(){sessionStorage.removeItem("libraryLoggedIn");location.replace("login.html")}</script>
